@@ -114,3 +114,7 @@ Starmap complements [Superpowers](https://github.com/obra/superpowers). Superpow
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=rebelice/starmap&type=Date)](https://star-history.com/#rebelice/starmap&Date)
