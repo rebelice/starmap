@@ -7,7 +7,8 @@ Use this structure when charting a starmap (SCENARIOS.md).
 
 > Goal: <one-line goal>
 > Verification: <how to verify each scenario>
-> Reference: <reference system or spec>
+> Reference: <reference system, spec, or "derived — see exploration notes">
+> Mode: <A (external reference) | B (derived reference)>
 
 Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
@@ -41,7 +42,7 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
 **Phases** are ordered by dependency:
 - Phase 1 must pass before Phase 2 makes sense
-- Example: output formatting before error messages, basic types before combinations
+- Example: basic cases before combinations, single features before interactions
 
 **Sections** within a phase are independent:
 - Can be executed in any order
@@ -51,7 +52,7 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 **Scenarios** are concrete and binary:
 - Each is one specific test case (a SQL statement, an API call, a specific input)
 - Pass or fail, no "mostly works"
-- Named by what they test: `INT UNSIGNED` not `test unsigned integer type`
+- Named by what they test: `SELECT FROM with alias` not `test alias completion`
 
 ## How to Be Thorough
 
@@ -66,7 +67,9 @@ For each feature area, systematically enumerate:
 | **Error cases** | what should fail and with what error |
 | **Implicit behavior** | auto-naming, type coercion, default values |
 
-Use the reference system's official documentation as a checklist. Read it section by section and extract every distinct behavior into a scenario.
+**Mode A:** Use the reference system's official documentation as a checklist. Read it section by section and extract every distinct behavior.
+
+**Mode B:** Use exploration results (source code, docs, specs, existing tests) as the checklist. Enumerate every code path, every grammar rule, every documented behavior.
 
 ## Sizing Guide
 

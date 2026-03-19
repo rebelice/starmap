@@ -19,19 +19,34 @@ Execute one section of scenarios.
 
 ## Process
 
+### Mode A (external reference)
+
 1. Read SCENARIOS.md, extract pending scenarios for <section>
 2. Write test cases (table-driven, one case per scenario)
-3. Run tests against reference system
+3. Run tests against reference system, capture expected output
 4. For each failure: analyze diff → fix code → verify no regression
 5. Update SCENARIOS.md checkboxes ([x] for passing, [~] for partial)
 6. Commit: run full test suite → stage specific files → commit with scenario stats
+
+### Mode B (derived reference)
+
+1. Read SCENARIOS.md, extract pending scenarios for <section>
+2. Write test cases (table-driven, one case per scenario)
+3. Generate expected results based on exploration findings (docs, source code analysis, specs)
+4. Run tests — if test fails, determine whether the expectation or the implementation is wrong:
+   - Expectation wrong → fix the expectation, document the reasoning
+   - Implementation wrong → fix the implementation
+5. **Review checkpoint**: before committing, present the generated expectations for review
+6. Update SCENARIOS.md checkboxes ([x] for passing, [~] for partial)
+7. Commit: run full test suite → stage specific files → commit with scenario stats
 
 ## Test Pattern
 
 [Customize for the project. Example:]
 
 - Table-driven tests with one entry per scenario
-- Reference comparison: run same input against reference system, compare output
+- Reference comparison: run same input against reference system, compare output (Mode A)
+- Generated expectations: agent produces expected output, human/agent reviews (Mode B)
 - Normalize whitespace/formatting before comparison
 
 ## Commit Workflow
@@ -54,7 +69,8 @@ Do not attempt to fix everything in one pass. Small, verified commits beat heroi
 
 ## Rules
 
-- Never modify test expectations to match implementation — fix implementation
+- Mode A: never modify test expectations to match implementation — fix implementation
+- Mode B: expectations can be corrected during review, but once reviewed and committed, treat them as authoritative
 - Always run full test suite after fixes to catch regressions
 - One section per invocation
 - One commit per section — don't accumulate multiple sections
@@ -66,11 +82,10 @@ Do not attempt to fix everything in one pass. Small, verified commits beat heroi
 
 When generating the worker skill, replace these with project-specific details:
 
-| Placeholder | Example |
-|------------|---------|
-| `<project>` | `mysql-catalog` |
-| Test pattern | Table-driven Go tests with `startReference()` helper |
-| Reference command | `docker exec mysql-8 mysql -e "SHOW CREATE TABLE ..."` |
-| Verification | Exact string match after whitespace normalization |
-| Commit prefix | `feat(mysql-catalog)` |
-| Full test command | `go test -v -count=1 ./backend/plugin/catalog/mysql/...` |
+| Placeholder | Example (Mode A) | Example (Mode B) |
+|------------|-------------------|-------------------|
+| `<project>` | `mysql-catalog` | `pg-completion` |
+| Test pattern | Table-driven Go tests with `startReference()` | Table-driven YAML tests with `|` cursor marker |
+| Verification | Diff output against reference system | Agent-generated expectations, reviewed |
+| Commit prefix | `feat(mysql-catalog)` | `test(pg-completion)` |
+| Full test command | `go test ./backend/plugin/catalog/mysql/...` | `go test ./backend/plugin/parser/pg/... -run Completion` |

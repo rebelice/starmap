@@ -40,13 +40,19 @@ Agent(
     - Does the commit workflow make sense for the batch size?
     - Are the driver commands sufficient to manage the work?
 
+    **Mode B only (derived reference):**
+    - Are the exploration sources sufficient? (docs, source code, specs)
+    - Is the expectation generation strategy clear?
+    - Is there a review step before expectations become authoritative?
+    - Are there areas where human review is especially critical?
+
     **Output format:**
     - Approved — no significant issues
     - Suggestions — list specific improvements (add scenario X, merge sections Y and Z)
     - Rework needed — fundamental issues that must be fixed before starting
 
     Be specific. Don't say "consider adding more edge cases" — say "Section 1.1 is
-    missing TINYINT, SMALLINT, MEDIUMINT scenarios."
+    missing LATERAL JOIN and recursive CTE scenarios."
   """
 )
 ```
