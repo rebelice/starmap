@@ -76,17 +76,18 @@ ln -sf ~/.agents/skills/starmap-repo/skills/starmap ~/.agents/skills/starmap
 
 ### Updating
 
-```bash
-cd ~/.claude/skills/starmap-repo && git pull
-```
+Tell Claude Code:
 
-The symlink means you always run the latest version.
+```
+Update starmap by pulling the latest changes in ~/.claude/skills/starmap-repo
+```
 
 ### Uninstalling
 
-```bash
-rm ~/.claude/skills/starmap
-rm -rf ~/.claude/skills/starmap-repo
+Tell Claude Code:
+
+```
+Uninstall starmap by removing ~/.claude/skills/starmap and ~/.claude/skills/starmap-repo
 ```
 
 ## What Gets Generated
