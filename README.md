@@ -74,6 +74,21 @@ git clone https://github.com/rebelice/starmap.git ~/.agents/skills/starmap-repo
 ln -sf ~/.agents/skills/starmap-repo/skills/starmap ~/.agents/skills/starmap
 ```
 
+### Updating
+
+```bash
+cd ~/.claude/skills/starmap-repo && git pull
+```
+
+The symlink means you always run the latest version.
+
+### Uninstalling
+
+```bash
+rm ~/.claude/skills/starmap
+rm -rf ~/.claude/skills/starmap-repo
+```
+
 ## What Gets Generated
 
 Running `/starmap init` creates three things:
