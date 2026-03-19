@@ -1,31 +1,54 @@
 # Starmap
 
-Chart a complete map of every scenario between where you are and where you need to be, then navigate there one section at a time.
+You tell your AI agent: "make our JSON formatter match `jq` exactly." Simple enough goal. But what does "exactly" actually mean? Hundreds of edge cases — numeric precision, unicode escapes, key ordering, nested indentation, trailing commas. Your agent fixes a few, misses dozens more, and you have no idea how far along you really are.
 
-Starmap is an agent skill for systematic goal decomposition. It takes a large, ambitious goal — like "match the behavior of system X" or "comprehensively test subsystem Y" — and breaks it down into hundreds of concrete, verifiable scenarios. Then it generates project-specific worker and driver skills to execute them methodically.
+Starmap solves this. It forces your agent to enumerate *every* scenario upfront, then work through them one by one with a checkbox for each. You always know exactly where you stand.
 
 ## How It Works
 
-1. **Explore** — Agents read source code, docs, specs, existing tests, and optionally run an external reference system to build a comprehensive feature inventory.
+You start with `/starmap init` and describe your goal. That's it — one question.
 
-2. **Chart** — Decompose the goal into 200-500 concrete scenarios organized by dependency.
+Your agent then goes and reads the code, the docs, the existing tests. It comes back with a proposal: "here's what I found, here's how I'd verify correctness, and here's the 170 scenarios I think we need to cover across 13 sections. Does this look right?"
 
-3. **Review** — A fresh subagent audits the starmap for completeness, structural issues, and gaps.
+Once you say go, Starmap generates a `SCENARIOS.md` file — your map — plus a pair of project-specific driver and worker skills. The driver dispatches a fresh worker for each section. Each worker writes tests, checks them against the reference, fixes what's broken, ticks the checkboxes, and commits. You can watch, step in, or let it run on autopilot.
 
-4. **Navigate** — A generated driver skill dispatches worker subagents section by section. Each worker writes tests, determines expected results (from any reference source), fixes differences, updates scenario checkboxes, and commits.
+```
+/json-formatter-driver status    → see exactly where you stand
+/json-formatter-driver next      → execute the next pending section
+/json-formatter-driver run-all   → let it go until it's done
+```
 
-5. **Arrive** — Every scenario checkbox is a verified point on the map. When the starmap is fully checked, you've reached your destination.
+Progress is never ambiguous. Open `SCENARIOS.md` and count the checkboxes:
+
+```markdown
+### 1.1 Primitive Values
+- [x] null literal
+- [x] true literal
+- [x] positive integer
+- [ ] float with exponent notation    ← still pending
+- [~] string with null bytes          ← needs upstream fix
+```
 
 ## When to Use
 
-- **Compatibility**: "make X behave identically to Y"
-- **Coverage**: "comprehensively test all aspects of Z"
-- **Migration**: "migrate from A to B completely"
-- Any goal where progress = "how many concrete scenarios pass"
+Starmap is built for goals with *lots* of concrete, verifiable scenarios:
 
-Reference sources can be anything: an external system, official docs, specs, source code analysis, or a combination. All are valid.
+- **Compatibility** — "make X behave identically to Y"
+- **Coverage** — "comprehensively test all aspects of Z"
+- **Migration** — "migrate from A to B completely"
 
-**Not for:** tasks with fewer than 50 scenarios (use a regular implementation plan).
+If your goal has fewer than 50 scenarios, a regular implementation plan is enough. Starmap shines when there are hundreds.
+
+## A Small Example
+
+Say you're building a JSON formatter and want it to match `jq .` output byte-for-byte. Starmap would decompose this into something like:
+
+**Phase 1: Basic Formatting** — primitives, simple structures, indentation rules
+**Phase 2: Edge Cases** — numeric precision, string escapes, structural limits
+
+Each phase breaks into sections (5-25 scenarios each), and each scenario is one specific, testable case: "negative zero formats the same way `jq` does." A worker picks up a section, writes the tests, runs both formatters, compares output, fixes differences, and moves on.
+
+See [examples/json-formatter/](examples/json-formatter/) for the full scenario map.
 
 ## Installation
 
@@ -51,45 +74,27 @@ git clone https://github.com/rebelice/starmap.git ~/.agents/skills/starmap-repo
 ln -sf ~/.agents/skills/starmap-repo/skills/starmap ~/.agents/skills/starmap
 ```
 
-## Usage
-
-```
-/starmap init       — Interactive: define goal, create SCENARIOS.md, generate worker + driver
-```
-
-Then use the generated driver:
-
-```
-/project-driver status    — Progress per section
-/project-driver plan      — Recommended execution order
-/project-driver next      — Execute next pending section
-/project-driver run-all   — Auto-pilot all remaining sections
-```
-
-See [examples/](examples/) for a concrete worked example.
-
 ## What Gets Generated
 
-When you run `/starmap init`, three artifacts are created:
+Running `/starmap init` creates three things:
 
-| Artifact | Location | Purpose |
-|----------|----------|---------|
-| **SCENARIOS.md** | In your project directory | The starmap — every scenario with a checkbox |
-| **Worker skill** | `~/.claude/skills/<project>-worker/` | Executes one section: write tests, run reference, fix diffs, commit |
-| **Driver skill** | `~/.claude/skills/<project>-driver/` | Manages progress, dispatches workers, tracks completion |
+| Artifact | Purpose |
+|----------|---------|
+| **SCENARIOS.md** | The map — every scenario with a checkbox |
+| **Worker skill** | Executes one section: write tests, verify against reference, fix, commit |
+| **Driver skill** | Dispatches workers, tracks progress, never does implementation itself |
 
-## Key Principles
+## Philosophy
 
-1. **SCENARIOS.md is the source of truth** — checkboxes ARE the progress
-2. **Expectations are authoritative once reviewed** — never weaken them to match implementation
-3. **One section at a time** — focused unit of work with its own commit
-4. **Progress is monotonic** — once a scenario passes, it never regresses
-5. **Partial is OK** — `[~]` means "needs upstream work", track it, don't block
+- **Enumerate first, implement second** — know the full scope before writing a line of code
+- **Checkboxes are truth** — `SCENARIOS.md` is the single source of progress, always up to date
+- **Expectations don't bend** — once a scenario's expected result is reviewed, the implementation adapts to it, not the other way around
+- **Monotonic progress** — scenarios never regress once passing
 
 ## Integration with Superpowers
 
-Starmap complements [Superpowers](https://github.com/obra/superpowers) — Superpowers gives your agent power, Starmap gives it direction. Use Superpowers skills for individual task execution (TDD, code review, debugging) and Starmap for the large-scale goal decomposition layer above.
+Starmap complements [Superpowers](https://github.com/obra/superpowers). Superpowers gives your agent power — TDD, code review, systematic debugging. Starmap gives it direction — decomposing an ambitious goal into hundreds of checkpoints and navigating through them. They work well together.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.
