@@ -1,4 +1,4 @@
-# Example: JSON Formatter Oracle Compatibility
+# Example: JSON Formatter Reference Compatibility
 
 This is a worked example of a small starmap (~50 scenarios) for making a JSON formatter match `jq` output exactly.
 
@@ -8,7 +8,7 @@ This is a worked example of a small starmap (~50 scenarios) for making a JSON fo
 |----------|--------|
 | **Goal** | JSON formatter output matches `jq .` behavior exactly |
 | **Verification surface** | Byte-for-byte output comparison |
-| **Oracle/reference** | `jq .` command |
+| **Reference system** | `jq .` command |
 | **Project location** | `lib/json-formatter/` |
 
 ## Generated Artifacts

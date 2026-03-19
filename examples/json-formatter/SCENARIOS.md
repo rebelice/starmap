@@ -2,7 +2,7 @@
 
 > Goal: JSON formatter output matches `jq` behavior exactly
 > Verification: format same input with both, compare output byte-for-byte
-> Oracle: `jq .` command
+> Reference: `jq .` command
 
 Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 

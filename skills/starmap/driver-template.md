@@ -94,8 +94,8 @@ When generating the driver skill, replace these with project-specific details:
 | `<project>` | `mysql-catalog` |
 | `<worker-skill-path>` | `~/.claude/skills/mysql-catalog-worker/SKILL.md` |
 | `<path>` to SCENARIOS.md | `backend/plugin/catalog/mysql/SCENARIOS.md` |
-| `<test-infrastructure-file>` | `oracle_test.go` |
-| `<existing-test-file>` | `create_table_oracle_test.go` |
+| `<test-infrastructure-file>` | `reference_test.go` |
+| `<existing-test-file>` | `create_table_reference_test.go` |
 | Recommended execution order | Phase 1 first, then Phase 2 sections in any order |
 
 ## What Stays Where
@@ -103,7 +103,7 @@ When generating the driver skill, replace these with project-specific details:
 | Main context (driver) | Subagent (worker) |
 |------------------------|-------------------|
 | `status` — read checkboxes | Read pending scenarios |
-| `plan` — show order | Write oracle test cases |
+| `plan` — show order | Write reference test cases |
 | `next` — pick & dispatch | Run tests, analyze diffs |
 | `report` — aggregate stats | Fix code, verify no regression |
 | Track overall progress | Update checkboxes, commit |

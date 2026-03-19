@@ -6,11 +6,11 @@ Starmap is an agent skill for systematic goal decomposition. It takes a large, a
 
 ## How It Works
 
-1. **Chart** — Define your goal, oracle/reference system, and verification method. Starmap guides you through decomposing it into 200-500 concrete scenarios organized by dependency.
+1. **Chart** — Define your goal, reference system, and verification method. Starmap guides you through decomposing it into 200-500 concrete scenarios organized by dependency.
 
 2. **Review** — A fresh subagent audits your starmap for completeness, structural issues, and gaps before you invest execution time.
 
-3. **Navigate** — A generated driver skill dispatches worker subagents section by section. Each worker writes oracle tests, fixes differences, updates scenario checkboxes, and commits. The driver tracks cumulative progress.
+3. **Navigate** — A generated driver skill dispatches worker subagents section by section. Each worker writes reference tests, fixes differences, updates scenario checkboxes, and commits. The driver tracks cumulative progress.
 
 4. **Arrive** — Every scenario checkbox is a verified point on the map. When the starmap is fully checked, you've reached your destination.
 
@@ -67,13 +67,13 @@ When you run `/starmap init`, three artifacts are created:
 | Artifact | Location | Purpose |
 |----------|----------|---------|
 | **SCENARIOS.md** | In your project directory | The starmap — every scenario with a checkbox |
-| **Worker skill** | `~/.claude/skills/<project>-worker/` | Executes one section: write tests, run oracle, fix diffs, commit |
+| **Worker skill** | `~/.claude/skills/<project>-worker/` | Executes one section: write tests, run reference, fix diffs, commit |
 | **Driver skill** | `~/.claude/skills/<project>-driver/` | Manages progress, dispatches workers, tracks completion |
 
 ## Key Principles
 
 1. **SCENARIOS.md is the source of truth** — checkboxes ARE the progress
-2. **Oracle is authoritative** — never adjust expectations to match implementation
+2. **Reference is authoritative** — never adjust expectations to match implementation
 3. **One section at a time** — focused unit of work with its own commit
 4. **Progress is monotonic** — once a scenario passes, it never regresses
 5. **Partial is OK** — `[~]` means "needs upstream work", track it, don't block

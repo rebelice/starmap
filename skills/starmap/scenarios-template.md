@@ -7,7 +7,7 @@ Use this structure when charting a starmap (SCENARIOS.md).
 
 > Goal: <one-line goal>
 > Verification: <how to verify each scenario>
-> Oracle: <reference system or spec>
+> Reference: <reference system or spec>
 
 Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
