@@ -25,22 +25,26 @@ Starmap is an agent skill for systematic goal decomposition. It takes a large, a
 
 ## Installation
 
-### Claude Code (Manual)
+### Claude Code
+
+Tell Claude Code:
+
+```
+Read https://raw.githubusercontent.com/rebelice/starmap/main/INSTALL.md and follow the instructions to install starmap
+```
+
+Or install manually:
 
 ```bash
-# Clone to your skills directory
-git clone https://github.com/rebeliceyang/starmap.git ~/.claude/skills/starmap-repo
-
-# Symlink the skill
-ln -s ~/.claude/skills/starmap-repo/skills/starmap ~/.claude/skills/starmap
+git clone https://github.com/rebelice/starmap.git ~/.claude/skills/starmap-repo
+ln -sf ~/.claude/skills/starmap-repo/skills/starmap ~/.claude/skills/starmap
 ```
 
 ### Codex / Other Agents
 
 ```bash
-# Clone and symlink into your agent's skills directory
-git clone https://github.com/rebeliceyang/starmap.git ~/.agents/skills/starmap-repo
-ln -s ~/.agents/skills/starmap-repo/skills/starmap ~/.agents/skills/starmap
+git clone https://github.com/rebelice/starmap.git ~/.agents/skills/starmap-repo
+ln -sf ~/.agents/skills/starmap-repo/skills/starmap ~/.agents/skills/starmap
 ```
 
 ## Usage
