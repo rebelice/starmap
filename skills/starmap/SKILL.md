@@ -47,35 +47,28 @@ Dispatch exploration subagents to build a thorough understanding of the territor
 
 The depth of exploration scales with how much is already known.
 
-After exploration, present findings and the **one real decision** to the user:
+After exploration, present a **single proposal** to the user covering three things:
 
-**Propose a reference strategy** — lead with a recommendation and reasoning, then offer alternatives conversationally:
+1. **What you found** — brief summary of current coverage and key gaps
+2. **Reference strategy** — how to verify correctness. Lead with your recommendation and reasoning. If there's a genuine choice (e.g., external system available but docs also usable), present alternatives conversationally. If the choice is obvious (e.g., no external system exists), just state it — don't force a false decision.
+3. **Proposed scope** — phase/section outline with approximate scenario counts
 
-> I explored X and found Y. For verifying correctness, I'd recommend **running against [reference system]** because it gives us ground truth without ambiguity.
+> **What I found:** 68 existing tests covering basic DML. Key gaps: DDL, window functions, ...
 >
-> Alternatively:
-> - **Derive from docs/specs** — if no reference system is available, authoritative docs work well
-> - **Analyze source code** — when building the reference from implementation knowledge
-> - **Combine approaches** — e.g., run reference system for common cases, check docs for edge cases
+> **Reference strategy:** I'd recommend deriving expectations from the parser grammar rules + PostgreSQL docs, since there's no external completion engine to test against.
 >
-> Which approach fits best?
+> **Proposed structure:**
+> - **Phase 1: Foundation Gaps** (~45 scenarios) — join variants, advanced WHERE, ...
+> - **Phase 2: DDL Contexts** (~50 scenarios) — CREATE, ALTER, DROP, ...
+> - Total: ~170 scenarios across 13 sections
+>
+> Does this look right, or should I adjust anything?
 
-This is the key decision point — everything else the agent should figure out autonomously.
+This is the one confirmation checkpoint — keep it to a single message. Once the user confirms, proceed to chart the full SCENARIOS.md.
 
 ### Step 3: Chart the Starmap
 
 Decompose into scenarios following ./scenarios-template.md. Structure: phases (ordered by dependency) > sections (independent within phase, 5-25 scenarios each) > scenarios (concrete, binary pass/fail).
-
-**Present the proposed scope before writing SCENARIOS.md** — show the phase/section outline with approximate scenario counts:
-
-> Here's the structure I'd propose:
-> - **Phase 1: Foundations** (~40 scenarios) — basic types, simple queries, ...
-> - **Phase 2: Advanced** (~60 scenarios) — subqueries, joins, ...
-> - Total: ~100 scenarios across 8 sections
->
-> Does this coverage look right, or should I adjust the scope?
-
-Once confirmed, write the full SCENARIOS.md.
 
 ### Step 4: Generate Skills
 
