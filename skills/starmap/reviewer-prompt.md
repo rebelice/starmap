@@ -40,11 +40,10 @@ Agent(
     - Does the commit workflow make sense for the batch size?
     - Are the driver commands sufficient to manage the work?
 
-    **Mode B only (derived reference):**
-    - Are the exploration sources sufficient? (docs, source code, specs)
-    - Is the expectation generation strategy clear?
-    - Is there a review step before expectations become authoritative?
-    - Are there areas where human review is especially critical?
+    **Reference quality:**
+    - Are the reference sources sufficient for this goal?
+    - Are there areas where expectations are especially uncertain and need careful review?
+    - Is the verification strategy clear and reproducible?
 
     **Output format:**
     - Approved — no significant issues

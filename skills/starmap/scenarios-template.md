@@ -7,8 +7,7 @@ Use this structure when charting a starmap (SCENARIOS.md).
 
 > Goal: <one-line goal>
 > Verification: <how to verify each scenario>
-> Reference: <reference system, spec, or "derived — see exploration notes">
-> Mode: <A (external reference) | B (derived reference)>
+> Reference sources: <external system, docs, source code, specs — list all that apply>
 
 Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
@@ -67,9 +66,7 @@ For each feature area, systematically enumerate:
 | **Error cases** | what should fail and with what error |
 | **Implicit behavior** | auto-naming, type coercion, default values |
 
-**Mode A:** Use the reference system's official documentation as a checklist. Read it section by section and extract every distinct behavior.
-
-**Mode B:** Use exploration results (source code, docs, specs, existing tests) as the checklist. Enumerate every code path, every grammar rule, every documented behavior.
+Use all available reference sources as checklists — official docs section by section, grammar rules, source code branches, existing test patterns.
 
 ## Sizing Guide
 
