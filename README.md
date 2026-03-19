@@ -41,12 +41,26 @@ If your goal has fewer than 50 scenarios, a regular implementation plan is enoug
 
 ## A Small Example
 
-Say you're building a JSON formatter and want it to match `jq .` output byte-for-byte. Starmap would decompose this into something like:
+Say you're building a JSON formatter and want it to match `jq .` output byte-for-byte. Starmap decomposes this into 40 scenarios across 6 sections. After a few rounds of `/json-formatter-driver next`, the status looks like:
 
-**Phase 1: Basic Formatting** — primitives, simple structures, indentation rules
-**Phase 2: Edge Cases** — numeric precision, string escapes, structural limits
+```
+JSON Formatter — Status
 
-Each phase breaks into sections (5-25 scenarios each), and each scenario is one specific, testable case: "negative zero formats the same way `jq` does." A worker picks up a section, writes the tests, runs both formatters, compares output, fixes differences, and moves on.
+| Sect | Section                  | Pass | Partial | Pending | Total |
+|------|--------------------------|------|---------|---------|-------|
+| 1.1  | Primitive Values         |   12 |       0 |       0 |    12 |
+| 1.2  | Simple Structures        |    7 |       0 |       0 |     7 |
+| 1.3  | Indentation              |    4 |       0 |       2 |     6 |
+| 2.1  | Numeric Precision        |    0 |       0 |       4 |     4 |
+| 2.2  | String Edge Cases        |    0 |       0 |       6 |     6 |
+| 2.3  | Structural Edge Cases    |    0 |       0 |       5 |     5 |
+|------|--------------------------|------|---------|---------|-------|
+| ALL  | TOTAL                    |   23 |       0 |      17 |    40 |
+
+Progress: 23/40 (57%)
+```
+
+Phase 1 is mostly done. Phase 2 hasn't started. Each section is one worker invocation — it writes the tests, runs both formatters, compares output, fixes differences, and moves on.
 
 See [examples/json-formatter/](examples/json-formatter/) for the full scenario map.
 
