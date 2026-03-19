@@ -27,16 +27,15 @@ Chart a complete map of every scenario between where you are and where you need 
 /starmap init      → Interactive: define goal, generate SCENARIOS.md + worker + driver skills
 ```
 
-### Step 1: Define the Goal
+### Step 1: Understand the Goal
 
-Present these questions to the user one at a time:
+**One question: What is the goal?**
 
-1. **What is the goal?** (e.g., "comprehensive completion tests for PG parser")
-2. **What is the verification surface?** (e.g., "completion results for each SQL context")
-3. **Where do expectations come from?** — an external system to run against, official docs/specs, source code analysis, or a combination. All are valid reference sources.
-4. **Where does the project live?** (e.g., `backend/plugin/parser/pg/`)
+Ask this single open-ended question. This is the one thing only the user knows. Examples: "match MySQL 8.0 catalog behavior", "comprehensive completion tests for PG parser".
 
-### Step 2: Explore
+Then **the agent explores autonomously** — do NOT ask the user where the project lives, what the verification surface is, or other questions the agent can answer by reading code.
+
+### Step 2: Explore & Propose
 
 Dispatch exploration subagents to build a thorough understanding of the territory:
 
@@ -46,13 +45,37 @@ Dispatch exploration subagents to build a thorough understanding of the territor
 4. **Run the reference system** (if one exists) — capture actual behavior
 5. **Enumerate systematically** — list every feature, variant, edge case, and combination
 
-The depth of exploration scales with how much is already known. If an external system provides all the answers, this step is lightweight. If the reference must be constructed from docs and source code, this step is the most important one.
+The depth of exploration scales with how much is already known.
 
-Output: a comprehensive feature inventory that becomes the basis for SCENARIOS.md.
+After exploration, present findings and the **one real decision** to the user:
+
+**Propose a reference strategy** — lead with a recommendation and reasoning, then offer alternatives conversationally:
+
+> I explored X and found Y. For verifying correctness, I'd recommend **running against [reference system]** because it gives us ground truth without ambiguity.
+>
+> Alternatively:
+> - **Derive from docs/specs** — if no reference system is available, authoritative docs work well
+> - **Analyze source code** — when building the reference from implementation knowledge
+> - **Combine approaches** — e.g., run reference system for common cases, check docs for edge cases
+>
+> Which approach fits best?
+
+This is the key decision point — everything else the agent should figure out autonomously.
 
 ### Step 3: Chart the Starmap
 
 Decompose into scenarios following ./scenarios-template.md. Structure: phases (ordered by dependency) > sections (independent within phase, 5-25 scenarios each) > scenarios (concrete, binary pass/fail).
+
+**Present the proposed scope before writing SCENARIOS.md** — show the phase/section outline with approximate scenario counts:
+
+> Here's the structure I'd propose:
+> - **Phase 1: Foundations** (~40 scenarios) — basic types, simple queries, ...
+> - **Phase 2: Advanced** (~60 scenarios) — subqueries, joins, ...
+> - Total: ~100 scenarios across 8 sections
+>
+> Does this coverage look right, or should I adjust the scope?
+
+Once confirmed, write the full SCENARIOS.md.
 
 ### Step 4: Generate Skills
 
