@@ -1,6 +1,6 @@
 # Scenarios Template
 
-Use this structure when charting a starmap (SCENARIOS.md).
+Use this structure when charting a starmap (SCENARIOS-<project>.md).
 
 ```markdown
 # <Project> Scenarios

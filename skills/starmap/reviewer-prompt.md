@@ -13,7 +13,7 @@ Agent(
     You are reviewing a starmap (scenario-driven development plan). Read the
     following files and evaluate whether the decomposition is sound:
 
-    1. SCENARIOS.md at <path> — the master scenario list
+    1. SCENARIOS-<project>.md at <path> — the master scenario list
     2. Worker skill at <worker-skill-path>
     3. Driver skill at <driver-skill-path>
 

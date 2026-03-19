@@ -13,7 +13,7 @@ This is a worked example of a small starmap (~50 scenarios) for making a JSON fo
 
 ## Generated Artifacts
 
-- **SCENARIOS.md** — 2 phases, 6 sections, ~50 scenarios
+- **SCENARIOS-json-formatter.md** — 2 phases, 6 sections, ~50 scenarios
 - **Worker skill** would be generated at `~/.claude/skills/json-formatter-worker/`
 - **Driver skill** would be generated at `~/.claude/skills/json-formatter-driver/`
 

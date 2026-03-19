@@ -6,7 +6,7 @@ Generate a worker skill at `~/.claude/skills/<project>-worker/SKILL.md` using th
 ---
 name: <project>-worker
 description: Use when implementing a batch of <project> scenarios. Takes a section
-  from SCENARIOS.md, writes tests, runs verification, fixes differences, updates progress.
+  from SCENARIOS-<project>.md, writes tests, runs verification, fixes differences, updates progress.
 ---
 
 # <Project> Worker
@@ -19,7 +19,7 @@ Execute one section of scenarios.
 
 ## Process
 
-1. Read SCENARIOS.md, extract pending scenarios for <section>
+1. Read SCENARIOS-<project>.md, extract pending scenarios for <section>
 2. Write test cases (table-driven, one case per scenario)
 3. Determine expected results:
    - If an external system exists: run it to capture expected output
@@ -29,7 +29,7 @@ Execute one section of scenarios.
    - Implementation wrong → fix implementation
    - Expectation wrong (based on deeper analysis) → fix expectation, document reasoning
 6. **Review**: present any non-obvious or agent-derived expectations for review before committing
-7. Update SCENARIOS.md checkboxes ([x] for passing, [~] for partial)
+7. Update SCENARIOS-<project>.md checkboxes ([x] for passing, [~] for partial)
 8. Commit: run full test suite → stage specific files → commit with scenario stats
 
 ## Test Pattern
@@ -44,7 +44,7 @@ Execute one section of scenarios.
 
 After each section completes:
 1. Run full short test suite to confirm no regressions
-2. Stage only modified files by name (implementation + tests + SCENARIOS.md)
+2. Stage only modified files by name (implementation + tests + SCENARIOS-<project>.md)
 3. Commit with message: `feat(<project>): verify section X.Y — <name>`
 4. Include scenario stats in commit body (N/M passing, any partial/skipped)
 

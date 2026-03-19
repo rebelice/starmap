@@ -17,7 +17,7 @@ description: Use when driving the <project> scenario coverage effort. Manages pr
 
 ## Commands
 
-- **status** — Show progress per section. Read SCENARIOS.md with the Read tool and count checkboxes (`- [x]` = pass, `- [~]` = partial, `- [ ]` = pending) per section. Do NOT use shell commands (awk/gawk/sed) to parse — use the Read tool and count in your response.
+- **status** — Show progress per section. Read SCENARIOS-<project>.md with the Read tool and count checkboxes (`- [x]` = pass, `- [~]` = partial, `- [ ]` = pending) per section. Do NOT use shell commands (awk/gawk/sed) to parse — use the Read tool and count in your response.
 - **next** — Dispatch next pending section as a fresh subagent
 - **run <section>** — Dispatch specific section as a fresh subagent
 - **run-all** — Run all remaining pending sections sequentially (auto-pilot)
@@ -38,7 +38,7 @@ Agent(
 
     ## Task
     Section to execute: X.Y
-    SCENARIOS.md location: <path>
+    SCENARIOS-<project>.md location: <path>
     Project directory: <path>
 
     ## Existing Infrastructure
@@ -56,7 +56,7 @@ Agent(
     do NOT create a duplicate. Instead:
     - Read the existing test function
     - Identify which test cases are already present
-    - Only add NEW test cases for scenarios still marked [ ] in SCENARIOS.md
+    - Only add NEW test cases for scenarios still marked [ ] in SCENARIOS-<project>.md
     - If all pending scenarios are already covered, skip to running tests
 
     ## Return Format
@@ -82,8 +82,8 @@ Runs all remaining pending sections sequentially in plan priority order:
 - One subagent at a time — don't parallelize
 - Driver never does implementation — only dispatches and tracks
 - Subagent must commit before returning
-- All counts are dynamic — computed from SCENARIOS.md checkboxes, never hardcoded
-- Use the Read tool to parse SCENARIOS.md — do NOT use shell commands (awk/gawk/sed/python) for markdown parsing
+- All counts are dynamic — computed from SCENARIOS-<project>.md checkboxes, never hardcoded
+- Use the Read tool to parse SCENARIOS-<project>.md — do NOT use shell commands (awk/gawk/sed/python) for markdown parsing
 ```
 
 ## Customization Points
@@ -94,7 +94,7 @@ When generating the driver skill, replace these with project-specific details:
 |------------|---------|
 | `<project>` | `mysql-catalog` |
 | `<worker-skill-path>` | `~/.claude/skills/mysql-catalog-worker/SKILL.md` |
-| `<path>` to SCENARIOS.md | `backend/plugin/catalog/mysql/SCENARIOS.md` |
+| `<path>` to SCENARIOS-<project>.md | `backend/plugin/catalog/mysql/SCENARIOS-<project>.md` |
 | `<test-infrastructure-file>` | `reference_test.go` |
 | `<existing-test-file>` | `create_table_reference_test.go` |
 | Recommended execution order | Phase 1 first, then Phase 2 sections in any order |

@@ -24,7 +24,7 @@ Chart a complete map of every scenario between where you are and where you need 
 ## The Process
 
 ```
-/starmap init      → Interactive: define goal, generate SCENARIOS.md + worker + driver skills
+/starmap init      → Interactive: define goal, generate SCENARIOS-<project>.md + worker + driver skills
 ```
 
 ### Step 1: Understand the Goal
@@ -64,7 +64,7 @@ After exploration, present a **single proposal** to the user covering three thin
 >
 > Does this look right, or should I adjust anything?
 
-This is the one confirmation checkpoint — keep it to a single message. Once the user confirms, proceed to chart the full SCENARIOS.md.
+This is the one confirmation checkpoint — keep it to a single message. Once the user confirms, proceed to chart the full SCENARIOS-<project>.md.
 
 ### Step 3: Chart the Starmap
 
@@ -84,7 +84,7 @@ Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, 
 
 ## Key Principles
 
-1. **SCENARIOS.md is the source of truth** — checkboxes ARE the progress
+1. **SCENARIOS-<project>.md is the source of truth** — checkboxes ARE the progress
 2. **Expectations are authoritative once reviewed** — whether from an external system, docs, or agent analysis, once reviewed and committed, don't weaken them to match implementation
 3. **One section at a time** — focused unit of work with its own commit
 4. **Progress is monotonic** — once a scenario passes, it never regresses
@@ -95,4 +95,4 @@ Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, 
 - **Worker doing too much**: if 20+ scenarios fail, fix 5-10, commit, let driver re-dispatch the rest
 - **Skipping exploration**: jumping to scenarios without understanding the territory leads to gaps
 - **Unreviewed expectations**: agent-generated expectations must be reviewed before becoming authoritative
-- **Not updating SCENARIOS.md**: progress is invisible if checkboxes aren't updated
+- **Not updating SCENARIOS-<project>.md**: progress is invisible if checkboxes aren't updated

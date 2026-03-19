@@ -10,7 +10,7 @@ You start with `/starmap init` and describe your goal. That's it — one questio
 
 Your agent then goes and reads the code, the docs, the existing tests. It comes back with a proposal: "here's what I found, here's how I'd verify correctness, and here's the 170 scenarios I think we need to cover across 13 sections. Does this look right?"
 
-Once you say go, Starmap generates a `SCENARIOS.md` file — your map — plus a pair of project-specific driver and worker skills. The driver dispatches a fresh worker for each section. Each worker writes tests, checks them against the reference, fixes what's broken, ticks the checkboxes, and commits. You can watch, step in, or let it run on autopilot.
+Once you say go, Starmap generates a `SCENARIOS-<project>.md` file — your map — plus a pair of project-specific driver and worker skills. The driver dispatches a fresh worker for each section. Each worker writes tests, checks them against the reference, fixes what's broken, ticks the checkboxes, and commits. You can watch, step in, or let it run on autopilot.
 
 ```
 /json-formatter-driver status    → see exactly where you stand
@@ -18,7 +18,7 @@ Once you say go, Starmap generates a `SCENARIOS.md` file — your map — plus a
 /json-formatter-driver run-all   → let it go until it's done
 ```
 
-Progress is never ambiguous. Open `SCENARIOS.md` and count the checkboxes:
+Progress is never ambiguous. Open `SCENARIOS-json-formatter.md` and count the checkboxes:
 
 ```markdown
 ### 1.1 Primitive Values
@@ -80,14 +80,14 @@ Running `/starmap init` creates three things:
 
 | Artifact | Purpose |
 |----------|---------|
-| **SCENARIOS.md** | The map — every scenario with a checkbox |
+| **SCENARIOS-<project>.md** | The map — every scenario with a checkbox |
 | **Worker skill** | Executes one section: write tests, verify against reference, fix, commit |
 | **Driver skill** | Dispatches workers, tracks progress, never does implementation itself |
 
 ## Philosophy
 
 - **Enumerate first, implement second** — know the full scope before writing a line of code
-- **Checkboxes are truth** — `SCENARIOS.md` is the single source of progress, always up to date
+- **Checkboxes are truth** — `SCENARIOS-<project>.md` is the single source of progress, always up to date
 - **Expectations don't bend** — once a scenario's expected result is reviewed, the implementation adapts to it, not the other way around
 - **Monotonic progress** — scenarios never regress once passing
 
