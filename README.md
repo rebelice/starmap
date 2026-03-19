@@ -67,11 +67,10 @@ git clone https://github.com/rebelice/starmap.git ~/.claude/skills/starmap-repo
 ln -sf ~/.claude/skills/starmap-repo/skills/starmap ~/.claude/skills/starmap
 ```
 
-### Codex / Other Agents
+### Any Agent (via [npx skills](https://github.com/vercel-labs/skills))
 
 ```bash
-git clone https://github.com/rebelice/starmap.git ~/.agents/skills/starmap-repo
-ln -sf ~/.agents/skills/starmap-repo/skills/starmap ~/.agents/skills/starmap
+npx skills add rebelice/starmap
 ```
 
 ### Updating
