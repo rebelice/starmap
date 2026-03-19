@@ -17,12 +17,12 @@ description: Use when driving the <project> scenario coverage effort. Manages pr
 
 ## Commands
 
-- **status** — Show progress per section (count checkboxes in SCENARIOS.md)
+- **status** — Show progress per section. Read SCENARIOS.md with the Read tool and count checkboxes (`- [x]` = pass, `- [~]` = partial, `- [ ]` = pending) per section. Do NOT use shell commands (awk/gawk/sed) to parse — use the Read tool and count in your response.
 - **next** — Dispatch next pending section as a fresh subagent
 - **run <section>** — Dispatch specific section as a fresh subagent
 - **run-all** — Run all remaining pending sections sequentially (auto-pilot)
 - **plan** — Show recommended execution order
-- **report** — Full progress report
+- **report** — Full progress report. Same approach as `status` — read the file, count checkboxes, summarize.
 
 ## Subagent Dispatch
 
@@ -83,6 +83,7 @@ Runs all remaining pending sections sequentially in plan priority order:
 - Driver never does implementation — only dispatches and tracks
 - Subagent must commit before returning
 - All counts are dynamic — computed from SCENARIOS.md checkboxes, never hardcoded
+- Use the Read tool to parse SCENARIOS.md — do NOT use shell commands (awk/gawk/sed/python) for markdown parsing
 ```
 
 ## Customization Points
