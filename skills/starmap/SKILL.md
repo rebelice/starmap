@@ -12,17 +12,7 @@ description: Use this skill whenever the user needs to systematically cover a la
 
 Chart a complete map of every scenario between where you are and where you need to be, then navigate there one section at a time.
 
-## When to Use
-
-**Use starmap when:**
-- Compatibility: "make X behave identically to Y"
-- Coverage: "comprehensively test all aspects of Z"
-- Migration: "migrate from A to B completely"
-- Any goal where progress = "how many concrete scenarios pass"
-
-**Don't use when:**
-- Fewer than 50 scenarios — use subagent-driven-development instead
-- No systematic enumeration needed — use writing-plans instead
+Not for tasks with fewer than 50 scenarios — use a regular implementation plan instead.
 
 ## The Process
 
@@ -32,9 +22,7 @@ Chart a complete map of every scenario between where you are and where you need 
 
 ### Step 1: Understand the Goal
 
-**One question: What is the goal?**
-
-Ask this single open-ended question. This is the one thing only the user knows. Examples: "match MySQL 8.0 catalog behavior", "comprehensive completion tests for PG parser".
+If the user already stated the goal in their message (e.g., "build comprehensive tests for X, use starmap"), skip straight to exploration. Only ask "What is the goal?" when it's genuinely unclear.
 
 Then explore autonomously — the agent can figure out where the project lives, what the verification surface is, and other context by reading code. Asking the user questions they'd expect you to answer yourself wastes their time and breaks trust.
 
@@ -56,14 +44,14 @@ After exploration, present a **single proposal** to the user covering three thin
 2. **Reference strategy** — how to verify correctness. Lead with your recommendation and reasoning. If there's a genuine choice (e.g., external system available but docs also usable), present alternatives conversationally. If the choice is obvious (e.g., no external system exists), just state it — don't force a false decision.
 3. **Proposed scope** — phase/section outline with approximate scenario counts
 
-> **What I found:** 68 existing tests covering basic DML. Key gaps: DDL, window functions, ...
+> **What I found:** [summary of current state and key gaps]
 >
-> **Reference strategy:** I'd recommend deriving expectations from the parser grammar rules + PostgreSQL docs, since there's no external completion engine to test against.
+> **Reference strategy:** [your recommendation with reasoning, plus alternatives if there's a genuine choice]
 >
 > **Proposed structure:**
-> - **Phase 1: Foundation Gaps** (~45 scenarios) — join variants, advanced WHERE, ...
-> - **Phase 2: DDL Contexts** (~50 scenarios) — CREATE, ALTER, DROP, ...
-> - Total: ~170 scenarios across 13 sections
+> - **Phase 1: ...** (~N scenarios) — ...
+> - **Phase 2: ...** (~N scenarios) — ...
+> - Total: ~N scenarios across M sections
 >
 > Does this look right, or should I adjust anything?
 
