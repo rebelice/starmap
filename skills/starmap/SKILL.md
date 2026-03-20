@@ -69,7 +69,26 @@ Generate a **worker** skill (./worker-template.md) and a **driver** skill (./dri
 
 Dispatch a fresh review subagent using ./reviewer-prompt.md before execution begins.
 
-### Step 6: Execute
+### Step 6: Optimize (per phase)
+
+Before executing each phase, dispatch a fresh subagent to analyze the phase and produce an execution plan. This agent gets a clean context — its only job is parallelization analysis.
+
+The optimize agent reads:
+1. SCENARIOS-<project>.md — the sections in the current phase
+2. The codebase — import graph, file dependencies between sections
+3. The execution log from prior phases (if any) — actual files_modified data
+
+It outputs an execution plan for that phase:
+- Which sections can run in parallel (no shared target files)
+- Which must be sequential (shared dependencies)
+- Whether a preparation step is needed (e.g., mechanical stub pass to break a dependency chain)
+- Batch ordering with estimated parallelism
+
+The plan is shown to the user for confirmation, then the driver follows it.
+
+This step is optional — skipping it falls back to sequential execution. Run it per-phase (not all phases at once) so each plan is based on the latest codebase state.
+
+### Step 7: Execute
 
 Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, `report`.
 

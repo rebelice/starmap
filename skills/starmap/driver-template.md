@@ -20,7 +20,7 @@ description: Use when driving the <project> scenario coverage effort. Manages pr
 - **status** — Show progress per section. Read SCENARIOS-<project>.md with the Read tool and count checkboxes (`- [x]` = pass, `- [~]` = partial, `- [ ]` = pending) per section. Do NOT use shell commands (awk/gawk/sed) to parse — use the Read tool and count in your response.
 - **next** — Dispatch next pending section as a fresh subagent
 - **run <section>** — Dispatch specific section as a fresh subagent
-- **run-all** — Run all remaining pending sections (auto-pilot). Batches obviously independent sections in parallel when safe, otherwise sequential.
+- **run-all** — Run all remaining pending sections (auto-pilot). Follows the execution plan if one exists, otherwise sequential.
 - **plan** — Show recommended execution order
 - **report** — Full progress report. Same approach as `status` — read the file, count checkboxes, summarize.
 
@@ -71,9 +71,9 @@ Agent(
 
 ## run-all Command
 
-Runs all remaining pending sections in plan priority order:
-1. Identify all sections with [ ] pending, sort by plan priority
-2. Group sections within the same phase into parallel batches (2-3 sections per batch) when they are clearly independent (different implementation targets, no shared code paths). When in doubt, keep them sequential.
+Runs all remaining pending sections following the execution plan:
+1. Identify all sections with [ ] pending
+2. If an execution plan exists (from the Optimize step), follow its batch ordering. If no plan exists, run sections sequentially in section-number order.
 3. For each section or batch:
    a. **Record start time** before dispatching
    b. Dispatch subagent(s):
@@ -111,7 +111,7 @@ Runs all remaining pending sections in plan priority order:
 
 ## Execution Rules
 
-- Default is sequential. Only batch sections within the same phase when independence is obvious.
+- Follow the execution plan for batching decisions. Without a plan, default to sequential.
 - Driver never does implementation — only dispatches and tracks
 - Subagent must commit before returning
 - All counts are dynamic — computed from SCENARIOS-<project>.md checkboxes, never hardcoded
