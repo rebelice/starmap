@@ -74,7 +74,7 @@ Runs all remaining pending sections sequentially in plan priority order:
 1. Identify all sections with [ ] pending, sort by plan priority
 2. For each: dispatch subagent → print summary → show cumulative status
 3. Stop on fatal failure (build broken); continue on partial ([~])
-4. **Pause after every 10 sections** — report cumulative progress and ask user whether to continue
+4. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
 5. Resumable: re-running picks up where it left off (checkboxes are durable)
 
 ## Execution Rules
