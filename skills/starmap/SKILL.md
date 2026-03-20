@@ -1,8 +1,11 @@
 ---
 name: starmap
-description: Use when a project requires systematic coverage of a large feature area,
-  matching the behavior of a reference system, or comprehensively testing a complex
-  subsystem
+description: Use this skill whenever the user needs to systematically cover a large
+  feature area, match the behavior of a reference system, comprehensively test a complex
+  subsystem, or tackle any goal where progress is measured by "how many concrete scenarios
+  pass." Triggers on phrases like "match behavior of X", "full compatibility with Y",
+  "comprehensive tests for Z", "migrate from A to B completely", or any task that
+  clearly involves 50+ verifiable scenarios.
 ---
 
 # Starmap
@@ -33,7 +36,7 @@ Chart a complete map of every scenario between where you are and where you need 
 
 Ask this single open-ended question. This is the one thing only the user knows. Examples: "match MySQL 8.0 catalog behavior", "comprehensive completion tests for PG parser".
 
-Then **the agent explores autonomously** — do NOT ask the user where the project lives, what the verification surface is, or other questions the agent can answer by reading code.
+Then explore autonomously — the agent can figure out where the project lives, what the verification surface is, and other context by reading code. Asking the user questions they'd expect you to answer yourself wastes their time and breaks trust.
 
 ### Step 2: Explore & Propose
 
@@ -91,8 +94,8 @@ Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, 
 
 ## Anti-Patterns
 
-- **Scenarios too vague**: "handle all numeric types" — each type should be separate
-- **Worker doing too much**: if 20+ scenarios fail, fix 5-10, commit, let driver re-dispatch the rest
-- **Skipping exploration**: jumping to scenarios without understanding the territory leads to gaps
-- **Unreviewed expectations**: agent-generated expectations must be reviewed before becoming authoritative
-- **Not updating SCENARIOS-<project>.md**: progress is invisible if checkboxes aren't updated
+- **Scenarios too vague**: "handle all numeric types" — break into one scenario per type, because vague scenarios can't be verified as pass/fail
+- **Worker doing too much**: if 20+ scenarios fail, fix 5-10, commit, let driver re-dispatch the rest — small verified commits beat heroic efforts that break things
+- **Skipping exploration**: jumping to scenarios without understanding the territory leads to gaps that are expensive to backfill later
+- **Unreviewed expectations**: agent-generated expectations must be reviewed before becoming authoritative — a wrong expectation silently corrupts all downstream work
+- **Not updating checkboxes**: progress is invisible if SCENARIOS-<project>.md isn't updated — the whole system depends on checkboxes being the single source of truth
