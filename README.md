@@ -120,9 +120,9 @@ Running `/starmap init` creates three things:
 - **Expectations don't bend** — once a scenario's expected result is reviewed, the implementation adapts to it, not the other way around
 - **Monotonic progress** — scenarios never regress once passing
 
-## Integration with Superpowers
+## Acknowledgments
 
-Starmap complements [Superpowers](https://github.com/obra/superpowers). Superpowers gives your agent power — TDD, code review, systematic debugging. Starmap gives it direction — decomposing an ambitious goal into hundreds of checkpoints and navigating through them. They work well together.
+Starmap's skill architecture and interaction patterns are inspired by [Superpowers](https://github.com/obra/superpowers). Superpowers handles individual tasks well — TDD, code review, debugging. Starmap picks up where that leaves off: when the problem is too large for a single plan and you need to systematically cover hundreds of scenarios.
 
 ## License
 
