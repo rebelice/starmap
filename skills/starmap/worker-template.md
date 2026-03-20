@@ -40,6 +40,8 @@ Execute one section of scenarios.
 - Compare actual output against expected output
 - Normalize whitespace/formatting before comparison
 
+When dispatched as part of a parallel batch, write tests to a per-section file (e.g., `section_1_1_test.go`) instead of appending to the shared test file. The driver will merge these into the canonical test file after the batch completes.
+
 ## Commit Workflow
 
 After each section completes:

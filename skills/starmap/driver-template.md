@@ -65,21 +65,51 @@ Agent(
     - Scenarios passed: N/M
     - Fixes applied: <list>
     - Partial/skipped: <list with reasons>
+    - Files modified: <list of all files you changed>
   """
 )
 
 ## run-all Command
 
-Runs all remaining pending sections sequentially in plan priority order:
+Runs all remaining pending sections in plan priority order:
 1. Identify all sections with [ ] pending, sort by plan priority
-2. For each: dispatch subagent → print summary → show cumulative status
-3. Stop on fatal failure (build broken); continue on partial ([~])
-4. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
-5. Resumable: re-running picks up where it left off (checkboxes are durable)
+2. Group sections within the same phase into parallel batches (2-3 sections per batch) when they are clearly independent (different implementation targets, no shared code paths). When in doubt, keep them sequential.
+3. For each batch:
+   - If batch size = 1: dispatch single subagent as usual
+   - If batch size > 1: dispatch all subagents in the batch simultaneously. Each worker writes tests to a per-section test file (e.g., `section_1_1_test.go`). Workers still commit individually.
+   - After all workers in the batch complete, merge per-section test files into the canonical test file, remove the per-section files, and commit the merge.
+4. Stop on fatal failure (build broken); continue on partial ([~])
+5. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
+6. Resumable: re-running picks up where it left off (checkboxes are durable)
+
+## Execution Log
+
+After each section completes, append a record to `STARMAP-LOG-<project>.json` in the project directory:
+
+```json
+{
+  "section": "2.3",
+  "section_name": "Comparison Operators",
+  "started_at": "2026-03-20T10:15:00Z",
+  "finished_at": "2026-03-20T10:28:30Z",
+  "duration_seconds": 810,
+  "scenarios_total": 8,
+  "scenarios_passed": 7,
+  "scenarios_partial": 1,
+  "scenarios_pending": 0,
+  "files_modified": ["mysql/deparse/expr.go", "mysql/deparse/expr_test.go"],
+  "retry_count": 0,
+  "batch_id": 3,
+  "parallel_with": ["2.1", "2.2"],
+  "outcome": "success"
+}
+```
+
+This log enables post-hoc analysis: identifying slow sections, validating parallelization decisions, and measuring actual speedup from batching.
 
 ## Execution Rules
 
-- One subagent at a time — don't parallelize
+- Default is sequential. Only batch sections within the same phase when independence is obvious.
 - Driver never does implementation — only dispatches and tracks
 - Subagent must commit before returning
 - All counts are dynamic — computed from SCENARIOS-<project>.md checkboxes, never hardcoded
