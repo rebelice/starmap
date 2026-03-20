@@ -20,7 +20,7 @@ description: Use when driving the <project> scenario coverage effort. Manages pr
 - **status** — Show progress per section. Read SCENARIOS-<project>.md with the Read tool and count checkboxes (`- [x]` = pass, `- [~]` = partial, `- [ ]` = pending) per section. Do NOT use shell commands (awk/gawk/sed) to parse — use the Read tool and count in your response.
 - **next** — Dispatch next pending section as a fresh subagent
 - **run <section>** — Dispatch specific section as a fresh subagent
-- **run-all** — Run all remaining pending sections sequentially (auto-pilot)
+- **run-all** — Run all remaining pending sections (auto-pilot). Batches obviously independent sections in parallel when safe, otherwise sequential.
 - **plan** — Show recommended execution order
 - **report** — Full progress report. Same approach as `status` — read the file, count checkboxes, summarize.
 
