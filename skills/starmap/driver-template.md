@@ -74,44 +74,40 @@ Agent(
 Runs all remaining pending sections in plan priority order:
 1. Identify all sections with [ ] pending, sort by plan priority
 2. Group sections within the same phase into parallel batches (2-3 sections per batch) when they are clearly independent (different implementation targets, no shared code paths). When in doubt, keep them sequential.
-3. For each batch:
-   - If batch size = 1: dispatch single subagent as usual
-   - If batch size > 1: dispatch all subagents in the batch simultaneously. Each worker writes tests to a per-section test file (e.g., `section_1_1_test.go`). Workers still commit individually.
-   - After all workers in the batch complete, merge per-section test files into the canonical test file, remove the per-section files, and commit the merge.
+3. For each section or batch:
+   a. **Record start time** before dispatching
+   b. Dispatch subagent(s):
+      - If batch size = 1: dispatch single subagent as usual
+      - If batch size > 1: dispatch all subagents simultaneously. Each worker writes tests to a per-section test file (e.g., `section_1_1_test.go`). Workers still commit individually.
+      - After all workers in the batch complete, merge per-section test files into the canonical test file, remove the per-section files, and commit the merge.
+   c. **Record end time**, then **append a log entry** to `STARMAP-LOG-<project>.json` for each completed section:
+      ```json
+      {
+        "section": "2.3",
+        "section_name": "Comparison Operators",
+        "phase": 2,
+        "started_at": "2026-03-20T10:15:00Z",
+        "finished_at": "2026-03-20T10:28:30Z",
+        "duration_seconds": 810,
+        "total_tokens": 45200,
+        "scenarios_total": 8,
+        "scenarios_passed": 7,
+        "scenarios_partial": 1,
+        "scenarios_pending": 0,
+        "files_modified": ["expr.go", "expr_test.go"],
+        "commit_sha": "a1b2c3d",
+        "retry_count": 0,
+        "batch_id": 3,
+        "parallel_with": ["2.1", "2.2"],
+        "outcome": "success",
+        "error_summary": null
+      }
+      ```
+      Capture `total_tokens` from the Agent tool's return value. Capture `commit_sha` from the worker's return summary. Set `error_summary` when outcome is not "success".
+   d. Print section summary, then continue
 4. Stop on fatal failure (build broken); continue on partial ([~])
 5. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
 6. Resumable: re-running picks up where it left off (checkboxes are durable)
-
-## Execution Log
-
-After each section completes, append a record to `STARMAP-LOG-<project>.json` in the project directory:
-
-```json
-{
-  "section": "2.3",
-  "section_name": "Comparison Operators",
-  "phase": 2,
-  "started_at": "2026-03-20T10:15:00Z",
-  "finished_at": "2026-03-20T10:28:30Z",
-  "duration_seconds": 810,
-  "total_tokens": 45200,
-  "scenarios_total": 8,
-  "scenarios_passed": 7,
-  "scenarios_partial": 1,
-  "scenarios_pending": 0,
-  "files_modified": ["mysql/deparse/expr.go", "mysql/deparse/expr_test.go"],
-  "commit_sha": "a1b2c3d",
-  "retry_count": 0,
-  "batch_id": 3,
-  "parallel_with": ["2.1", "2.2"],
-  "outcome": "success",
-  "error_summary": null
-}
-```
-
-Fields: `phase` for phase-level aggregation, `total_tokens` from the Agent tool's return value for cost analysis, `commit_sha` for tracing which commit a section produced, `error_summary` for diagnosing failures (null when successful).
-
-This log enables post-hoc analysis: identifying slow sections, cost hotspots, validating parallelization decisions, and tracing issues to specific commits.
 
 ## Execution Rules
 
