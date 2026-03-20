@@ -90,22 +90,28 @@ After each section completes, append a record to `STARMAP-LOG-<project>.json` in
 {
   "section": "2.3",
   "section_name": "Comparison Operators",
+  "phase": 2,
   "started_at": "2026-03-20T10:15:00Z",
   "finished_at": "2026-03-20T10:28:30Z",
   "duration_seconds": 810,
+  "total_tokens": 45200,
   "scenarios_total": 8,
   "scenarios_passed": 7,
   "scenarios_partial": 1,
   "scenarios_pending": 0,
   "files_modified": ["mysql/deparse/expr.go", "mysql/deparse/expr_test.go"],
+  "commit_sha": "a1b2c3d",
   "retry_count": 0,
   "batch_id": 3,
   "parallel_with": ["2.1", "2.2"],
-  "outcome": "success"
+  "outcome": "success",
+  "error_summary": null
 }
 ```
 
-This log enables post-hoc analysis: identifying slow sections, validating parallelization decisions, and measuring actual speedup from batching.
+Fields: `phase` for phase-level aggregation, `total_tokens` from the Agent tool's return value for cost analysis, `commit_sha` for tracing which commit a section produced, `error_summary` for diagnosing failures (null when successful).
+
+This log enables post-hoc analysis: identifying slow sections, cost hotspots, validating parallelization decisions, and tracing issues to specific commits.
 
 ## Execution Rules
 
