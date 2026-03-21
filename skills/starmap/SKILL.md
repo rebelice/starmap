@@ -56,7 +56,7 @@ This is the one confirmation checkpoint. Once the user confirms, proceed to char
 
 ### Step 3: Chart the Starmap
 
-Decompose into scenarios following ./scenarios-template.md. Structure: phases (ordered by dependency) > sections (independent within phase, 5-25 scenarios each) > scenarios (concrete, binary pass/fail).
+Decompose into scenarios following ./scenarios-template.md. Structure: phases (ordered by dependency) > sections (coverage units, 5-25 scenarios each; execution order decided later by execution design) > scenarios (concrete, binary pass/fail).
 
 For each section, annotate the change surface: which files it will likely modify (Targets), any files shared with other sections (Shared), and its proof command (Proof). These annotations can be shallow ("Shared: none") for obviously simple sections — the point is to never skip the question.
 

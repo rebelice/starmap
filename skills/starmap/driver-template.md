@@ -1,6 +1,6 @@
 # Driver Skill Template
 
-Generate a driver skill at `~/.claude/skills/<project>-driver/SKILL.md` using this template. The driver manages progress and dispatches worker subagents — it never does implementation.
+Generate a driver skill at `~/.claude/skills/<project>-driver/SKILL.md` using this template. The driver manages progress, dispatches worker subagents, and performs integration edits (merging test files, updating SCENARIOS checkboxes). It never does section implementation.
 
 ```markdown
 ---
@@ -97,9 +97,9 @@ Runs all remaining pending sections following the execution plan:
 ## Execution Rules
 
 - Follow the execution design for batching decisions. Without a design, default to sequential.
-- Driver never does implementation — only dispatches and tracks
+- Driver never does section implementation — only dispatches, tracks, and performs integration edits (merging test files, updating SCENARIOS checkboxes, running proof commands)
 - Subagent must commit before returning
-- During parallel execution, only the driver updates SCENARIOS-<project>.md checkboxes. Workers report results in their return format; driver applies checkbox updates after batch integration proof passes.
+- The driver is the sole writer of SCENARIOS-<project>.md checkboxes. Workers report results in their return format; driver applies checkbox updates after proof passes. This applies to both sequential and parallel execution.
 - All counts are dynamic — computed from SCENARIOS-<project>.md checkboxes, never hardcoded
 - Use the Read tool to parse SCENARIOS-<project>.md — do NOT use shell commands (awk/gawk/sed/python) for markdown parsing
 ```
@@ -115,7 +115,7 @@ When generating the driver skill, replace these with project-specific details:
 | `<path>` to SCENARIOS-<project>.md | `backend/plugin/catalog/mysql/SCENARIOS-<project>.md` |
 | `<test-infrastructure-file>` | `reference_test.go` |
 | `<existing-test-file>` | `create_table_reference_test.go` |
-| Recommended execution order | Phase 1 first, then Phase 2 sections in any order |
+| Recommended execution order | Phase 1 first, then Phase 2; section order within each phase per execution design |
 
 ## What Stays Where
 

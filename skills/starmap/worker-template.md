@@ -31,8 +31,8 @@ Execute one section of scenarios.
    - Expectation wrong (based on deeper analysis) → fix expectation, document reasoning
 7. **Review**: present any non-obvious or agent-derived expectations for review before committing
 8. **Section-local proof**: run the section's proof command (from annotations, or standard test command). This must pass before proceeding.
-9. Update SCENARIOS-<project>.md checkboxes ([x] for passing, [~] for partial). During parallel execution, do NOT update checkboxes — include them in your return format instead; the driver will apply them after batch integration proof.
-10. Commit: stage specific files → commit with scenario stats
+9. Report checkbox updates in your return format (which scenarios are [x] passing, [~] partial). The driver is responsible for updating SCENARIOS-<project>.md — workers never write to the SCENARIOS file directly.
+10. Commit: stage specific files (implementation + tests only, NOT SCENARIOS) → commit with scenario stats
 
 ## Test Pattern
 
@@ -47,8 +47,8 @@ When dispatched as part of a parallel batch, write tests to a per-section file (
 ## Commit Workflow
 
 After each section completes:
-1. Run full short test suite to confirm no regressions
-2. Stage only modified files by name (implementation + tests + SCENARIOS-<project>.md)
+1. Run section-local proof (the section's proof command, or tests scoped to this section's files). Full suite is the driver's responsibility at batch/global proof.
+2. Stage only modified files by name (implementation + tests). Do NOT stage SCENARIOS-<project>.md — the driver updates it.
 3. Commit with message: `feat(<project>): verify section X.Y — <name>`
 4. Include scenario stats in commit body (N/M passing, any partial/skipped)
 
@@ -66,7 +66,7 @@ Do not attempt to fix everything in one pass. Small, verified commits beat heroi
 
 - Once expectations are reviewed and committed, treat them as authoritative — fix implementation, not expectations
 - If deeper analysis reveals an expectation was wrong, fix it with documented reasoning
-- Always run full test suite after fixes to catch regressions
+- Run section-local proof after fixes — full test suite is the driver's job at batch/global proof
 - One section per invocation
 - One commit per section — don't accumulate multiple sections
 - Never use `git add -A` or `git add .` — stage specific files only

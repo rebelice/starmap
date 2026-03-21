@@ -26,7 +26,7 @@ Agent(
 
     **Structure:**
     - Are phases ordered by dependency? (Can Phase 2 be done without Phase 1?)
-    - Are sections within a phase truly independent?
+    - Are sections within a phase properly scoped as coverage units? (Execution order is decided by execution design, not assumed here.)
     - Is each scenario concrete and binary (pass/fail, not "mostly works")?
     - Are scenarios named by what they test, not how?
 

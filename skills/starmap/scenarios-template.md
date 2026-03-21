@@ -54,10 +54,10 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 - Phase 1 must pass before Phase 2 makes sense
 - Example: basic cases before combinations, single features before interactions
 
-**Sections** within a phase are independent:
-- Can be executed in any order
+**Sections** within a phase are coverage units:
 - Each section is one worker invocation
 - Target 5-25 scenarios per section
+- Execution order (sequential, parallel, or prep-gated) is decided by the execution design step, not assumed at chart time
 
 **Scenarios** are concrete and binary:
 - Each is one specific test case (a SQL statement, an API call, a specific input)
