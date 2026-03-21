@@ -77,37 +77,12 @@ Runs all remaining pending sections following the execution plan:
 1. Identify all sections with [ ] pending
 2. If an execution design exists (from the Design Execution step), follow its batch ordering. If no design exists, run sections sequentially in section-number order.
 3. For each section or batch:
-   a. **Record start time** before dispatching
-   b. Dispatch subagent(s):
+   a. Dispatch subagent(s):
       - If batch size = 1: dispatch single subagent as usual
       - If batch size > 1: dispatch all subagents simultaneously. Each worker writes tests to a per-section test file (e.g., `section_1_1_test.go`). Workers still commit individually.
       - After all workers in the batch complete, merge per-section test files into the canonical test file, remove the per-section files, and commit the merge.
-   c. **Record end time**, then **append a log entry** to `STARMAP-LOG-<project>.json` for each completed section:
-      ```json
-      {
-        "section": "2.3",
-        "section_name": "Comparison Operators",
-        "phase": 2,
-        "started_at": "2026-03-20T10:15:00Z",
-        "finished_at": "2026-03-20T10:28:30Z",
-        "duration_seconds": 810,
-        "total_tokens": 45200,
-        "scenarios_total": 8,
-        "scenarios_passed": 7,
-        "scenarios_partial": 1,
-        "scenarios_pending": 0,
-        "files_modified": ["expr.go", "expr_test.go"],
-        "commit_sha": "a1b2c3d",
-        "retry_count": 0,
-        "batch_id": 3,
-        "parallel_with": ["2.1", "2.2"],
-        "outcome": "success",
-        "error_summary": null
-      }
-      ```
-      Capture `total_tokens` from the Agent tool's return value. Capture `commit_sha` from the worker's return summary. Set `error_summary` when outcome is not "success".
-   d. **Batch integration proof** (parallel batches only): after merging all workers' changes, run the batch integration proof command from the execution design. If it fails, identify which section caused the regression before continuing.
-   e. Print section summary, then continue
+   b. **Batch integration proof** (parallel batches only): after merging all workers' changes, run the batch integration proof command from the execution design. If it fails, identify which section caused the regression before continuing.
+   c. Print section summary, then continue
 4. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
 5. Stop on fatal failure (build broken); continue on partial ([~])
 6. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
