@@ -66,6 +66,8 @@ Agent(
     - Fixes applied: <list>
     - Partial/skipped: <list with reasons>
     - Files modified: <list of all files you changed>
+    - Shared files touched: <any files marked "Shared" in the section's annotations>
+    - Proof result: pass/fail (did section-local proof pass?)
   """
 )
 
@@ -73,7 +75,7 @@ Agent(
 
 Runs all remaining pending sections following the execution plan:
 1. Identify all sections with [ ] pending
-2. If an execution plan exists (from the Optimize step), follow its batch ordering. If no plan exists, run sections sequentially in section-number order.
+2. If an execution design exists (from the Design Execution step), follow its batch ordering. If no design exists, run sections sequentially in section-number order.
 3. For each section or batch:
    a. **Record start time** before dispatching
    b. Dispatch subagent(s):
@@ -104,16 +106,25 @@ Runs all remaining pending sections following the execution plan:
       }
       ```
       Capture `total_tokens` from the Agent tool's return value. Capture `commit_sha` from the worker's return summary. Set `error_summary` when outcome is not "success".
-   d. Print section summary, then continue
-4. Stop on fatal failure (build broken); continue on partial ([~])
-5. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
-6. Resumable: re-running picks up where it left off (checkboxes are durable)
+   d. **Batch integration proof** (parallel batches only): after merging all workers' changes, run the batch integration proof command from the execution design. If it fails, identify which section caused the regression before continuing.
+   e. Print section summary, then continue
+4. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
+5. Stop on fatal failure (build broken); continue on partial ([~])
+6. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
+7. Resumable: re-running picks up where it left off (checkboxes are durable)
+
+## Proof Checkpoints
+
+- **Section-local**: Worker runs its proof command before returning and reports pass/fail. Already implicit (workers run tests), but this is an explicit obligation.
+- **Batch integration**: Driver runs integration proof after merging a parallel batch. Sequential sections skip this — section-local proof is sufficient.
+- **Global**: Driver runs full proof at phase end. Mandatory — never skip.
 
 ## Execution Rules
 
-- Follow the execution plan for batching decisions. Without a plan, default to sequential.
+- Follow the execution design for batching decisions. Without a design, default to sequential.
 - Driver never does implementation — only dispatches and tracks
 - Subagent must commit before returning
+- During parallel execution, only the driver updates SCENARIOS-<project>.md checkboxes. Workers report results in their return format; driver applies checkbox updates after batch integration proof passes.
 - All counts are dynamic — computed from SCENARIOS-<project>.md checkboxes, never hardcoded
 - Use the Read tool to parse SCENARIOS-<project>.md — do NOT use shell commands (awk/gawk/sed/python) for markdown parsing
 ```

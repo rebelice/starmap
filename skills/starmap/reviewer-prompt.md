@@ -45,13 +45,25 @@ Agent(
     - Are there areas where expectations are especially uncertain and need careful review?
     - Is the verification strategy clear and reproducible?
 
+    **Change-surface annotations:**
+    - Are Targets plausible? Do the listed files exist and make sense for the section's scenarios?
+    - Are Shared annotations correct? Spot-check: read a few target files and check whether other sections also reference them.
+    - Are there obvious shared surfaces that no section has declared? (e.g., a central dispatch file, a shared test helper)
+    - Rework is mandatory if multiple sections claim "Shared: none" but clearly target the same files.
+
+    **Proof boundaries:**
+    - Is the section-level proof command specific enough to catch regressions?
+    - Is the global proof command comprehensive enough for the project scope?
+    - Are there sections where proof independence is dubious? (e.g., integration tests where one section's changes could silently break another's expectations)
+
     **Output format:**
     - Approved — no significant issues
-    - Suggestions — list specific improvements (add scenario X, merge sections Y and Z)
+    - Suggestions — list specific improvements (add scenario X, merge sections Y and Z, fix Shared annotation on section 1.3)
     - Rework needed — fundamental issues that must be fixed before starting
 
     Be specific. Don't say "consider adding more edge cases" — say "Section 1.1 is
-    missing LATERAL JOIN and recursive CTE scenarios."
+    missing LATERAL JOIN and recursive CTE scenarios" or "Section 2.3 claims Shared: none
+    but targets parser.go which is also in Section 2.5's Targets."
   """
 )
 ```

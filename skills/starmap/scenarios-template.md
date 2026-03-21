@@ -8,6 +8,7 @@ Use this structure when charting a starmap (SCENARIOS-<project>.md).
 > Goal: <one-line goal>
 > Verification: <how to verify each scenario>
 > Reference sources: <external system, docs, source code, specs — list all that apply>
+> Proof: <section-local proof command> | <batch integration proof command> | <global proof command>
 
 Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
@@ -17,12 +18,20 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
 ### 1.1 <Section Name>
 
+> Targets: <files this section will modify>
+> Shared: <files shared with other sections in this phase, or "none">
+> Proof: <section-specific verification command, or "standard">
+
 - [ ] Scenario A — concrete, testable statement
 - [ ] Scenario B — another concrete case
 - [ ] Scenario C
 ...
 
 ### 1.2 <Section Name>
+
+> Targets: <files>
+> Shared: <files or "none">
+> Proof: <command or "standard">
 
 - [ ] Scenario D
 - [ ] Scenario E
@@ -31,9 +40,11 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 ## Phase 2: <Next Layer>
 
 ### 2.1 <Section Name>
-...
 
-## Phase 3: <Advanced>
+> Targets: <files>
+> Shared: <files or "none">
+> Proof: <command or "standard">
+
 ...
 ```
 
@@ -52,6 +63,16 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 - Each is one specific test case (a SQL statement, an API call, a specific input)
 - Pass or fail, no "mostly works"
 - Named by what they test: `SELECT FROM with alias` not `test alias completion`
+
+## Change-Surface Annotations
+
+Each section has three annotation fields:
+
+- **Targets**: files this section will create or modify. Best guess at chart time, refined during execution design. Examples: `lib/formatter/primitives.go, lib/formatter/primitives_test.go`
+- **Shared**: files that also appear in another section's Targets within the same phase. "none" when fully isolated. This is the key signal for parallelization decisions.
+- **Proof**: the verification command that proves this section's work. "standard" means use the project's default test command. Can be narrower (a specific test file) or broader (requires integration test).
+
+These annotations force the question "what does this section actually touch?" even when the answer is simple. A section with `Shared: none` is a one-line annotation, not a burden. But skipping the question entirely is how parallel execution breaks.
 
 ## How to Be Thorough
 

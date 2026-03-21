@@ -10,7 +10,7 @@ description: Use this skill whenever the user needs to systematically cover a la
 
 # Starmap
 
-Chart a complete map of every scenario between where you are and where you need to be, then navigate there one section at a time.
+Coverage planning + proof-preserving parallelization for AI coding agents.
 
 Not for tasks with fewer than 50 scenarios — use a regular implementation plan instead.
 
@@ -22,44 +22,43 @@ Not for tasks with fewer than 50 scenarios — use a regular implementation plan
 
 ### Step 1: Understand the Goal
 
-If the user already stated the goal in their message (e.g., "build comprehensive tests for X, use starmap"), skip straight to exploration. Only ask "What is the goal?" when it's genuinely unclear.
+If the user already stated the goal in their message, skip straight to exploration. Only ask "What is the goal?" when it's genuinely unclear.
 
 Then explore autonomously — the agent can figure out where the project lives, what the verification surface is, and other context by reading code. Asking the user questions they'd expect you to answer yourself wastes their time and breaks trust.
 
-### Step 2: Explore & Propose
+### Step 2: Explore
 
-Dispatch exploration subagents to build a thorough understanding of the territory:
+Dispatch exploration subagents to build understanding across two dimensions:
 
-1. **Read source code** — understand what the system does and what it should support
-2. **Read documentation** — official specs, grammar definitions, language references
-3. **Read existing tests** — understand what's already covered and what patterns are used
-4. **Run the reference system** (if one exists) — capture actual behavior
-5. **Enumerate systematically** — list every feature, variant, edge case, and combination
+**Feature terrain** — what must be covered:
+1. Read source code — understand what the system does and what it should support
+2. Read documentation — official specs, grammar definitions, language references
+3. Read existing tests — what's already covered and what patterns are used
+4. Run the reference system (if one exists) — capture actual behavior
+5. Enumerate systematically — every feature, variant, edge case, and combination
 
-The depth of exploration scales with how much is already known.
+**Change terrain** — what execution surfaces are involved:
+1. Identify shared callers and dispatch layers — files imported by many modules
+2. Identify shared test surfaces — test helpers, fixtures, shared test files
+3. Identify integration hotspots — registries, routers, config files that multiple sections would touch
+4. Note shared progress artifacts — the SCENARIOS file itself, shared state files
 
-After exploration, present a **single proposal** to the user covering three things:
+The change terrain exploration prevents the most common parallelization failure: treating topic-level separation as execution-level separation. Two sections about different features may still collide on the same shared caller file.
+
+After exploration, present a **single proposal** to the user covering:
 
 1. **What you found** — brief summary of current coverage and key gaps
-2. **Reference strategy** — how to verify correctness. Lead with your recommendation and reasoning. If there's a genuine choice (e.g., external system available but docs also usable), present alternatives conversationally. If the choice is obvious (e.g., no external system exists), just state it — don't force a false decision.
+2. **Reference strategy** — how to verify correctness
 3. **Proposed scope** — phase/section outline with approximate scenario counts
+4. **Change-surface overview** — are sections well-isolated or do they share significant files?
 
-> **What I found:** [summary of current state and key gaps]
->
-> **Reference strategy:** [your recommendation with reasoning, plus alternatives if there's a genuine choice]
->
-> **Proposed structure:**
-> - **Phase 1: ...** (~N scenarios) — ...
-> - **Phase 2: ...** (~N scenarios) — ...
-> - Total: ~N scenarios across M sections
->
-> Does this look right, or should I adjust anything?
-
-This is the one confirmation checkpoint — keep it to a single message. Once the user confirms, proceed to chart the full SCENARIOS-<project>.md.
+This is the one confirmation checkpoint. Once the user confirms, proceed to chart.
 
 ### Step 3: Chart the Starmap
 
 Decompose into scenarios following ./scenarios-template.md. Structure: phases (ordered by dependency) > sections (independent within phase, 5-25 scenarios each) > scenarios (concrete, binary pass/fail).
+
+For each section, annotate the change surface: which files it will likely modify (Targets), any files shared with other sections (Shared), and its proof command (Proof). These annotations can be shallow ("Shared: none") for obviously simple sections — the point is to never skip the question.
 
 ### Step 4: Generate Skills
 
@@ -67,37 +66,40 @@ Generate a **worker** skill (./worker-template.md) and a **driver** skill (./dri
 
 ### Step 5: Review
 
-Dispatch a fresh review subagent using ./reviewer-prompt.md before execution begins.
+Dispatch a fresh review subagent using ./reviewer-prompt.md. The review now covers completeness, structure, change-surface annotations, and proof boundaries.
 
-### Step 6: Optimize (per phase)
+### Step 6: Design Execution (per phase)
 
-Before executing each phase, dispatch a fresh subagent to analyze the phase and produce an execution plan. This agent gets a clean context — its only job is parallelization analysis.
+Before executing each phase, dispatch a fresh subagent using ./execution-design-prompt.md to produce an execution plan. This agent gets a clean context — its only job is execution architecture.
 
-The optimize agent reads:
-1. SCENARIOS-<project>.md — the sections in the current phase
-2. The codebase — import graph, file dependencies between sections
-3. The execution log from prior phases (if any) — actual files_modified data
+It reads the change-surface annotations from SCENARIOS, verifies them against the actual codebase, and classifies the phase into an execution shape:
 
-It outputs an execution plan for that phase:
-- Which sections can run in parallel (no shared target files)
-- Which must be sequential (shared dependencies)
-- Whether a preparation step is needed (e.g., mechanical stub pass to break a dependency chain)
-- Batch ordering with estimated parallelism
+- **Sequential** — deep coupling or shared surfaces that can't be prepped away
+- **Prep-gated** — a preparation step (shared scaffolding, stubs, interface changes) unlocks parallel execution
+- **Parallel** — sections are independent on all three dimensions
+- **Integration-only** — sections run in parallel but need a dedicated integration step afterward
 
-The plan is shown to the user for confirmation, then the driver follows it.
+It also defines proof checkpoints: section-local proof (worker verifies), batch integration proof (driver verifies after merge), and global proof (phase-end full verification).
 
-This step is optional — skipping it falls back to sequential execution. Run it per-phase (not all phases at once) so each plan is based on the latest codebase state.
+This step is always performed but may be shallow. For phases with 3 or fewer clearly-isolated sections, a one-line plan suffices: "Sequential, standard proof, no shared surfaces."
 
 ### Step 7: Execute
 
 Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, `report`.
 
+Execution follows the staged verification model:
+- **Section-local proof**: each worker verifies its own tests pass before returning
+- **Batch integration proof**: after each parallel batch, driver runs integration verification
+- **Global proof**: at phase end, driver runs the full canonical build + test suite
+
 ## Key Principles
 
 1. **SCENARIOS-<project>.md is the source of truth** — checkboxes ARE the progress
-2. **Expectations are authoritative once reviewed** — whether from an external system, docs, or agent analysis, once reviewed and committed, don't weaken them to match implementation
+2. **Expectations are authoritative once reviewed** — never weaken them to match implementation
 3. **One section at a time** — focused unit of work with its own commit
 4. **Progress is monotonic** — once a scenario passes, it never regresses
+5. **Three kinds of independence** — semantic (different features), change-surface (different files), proof (non-interfering verification). All three are needed for safe parallel execution.
+6. **Heavy-by-default planning with pruning** — always ask the change-surface and proof questions, but allow shallow answers when the situation is obviously simple
 
 ## Anti-Patterns
 
@@ -106,3 +108,4 @@ Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, 
 - **Skipping exploration**: jumping to scenarios without understanding the territory leads to gaps that are expensive to backfill later
 - **Unreviewed expectations**: agent-generated expectations must be reviewed before becoming authoritative — a wrong expectation silently corrupts all downstream work
 - **Not updating checkboxes**: progress is invisible if SCENARIOS-<project>.md isn't updated — the whole system depends on checkboxes being the single source of truth
+- **Confusing semantic with change-surface independence**: two sections about different features may still collide on shared callers, dispatch layers, or test fixtures. Topic separation is not execution separation.

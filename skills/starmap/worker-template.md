@@ -20,17 +20,19 @@ Execute one section of scenarios.
 ## Process
 
 1. Read SCENARIOS-<project>.md, extract pending scenarios for <section>
-2. Write test cases (table-driven, one case per scenario)
-3. Determine expected results:
+2. Read the section's change-surface annotations (Targets, Shared, Proof). Stay within the declared target files. If you need to modify a file not listed in Targets, note it in your return — this signals an annotation that needs updating.
+3. Write test cases (table-driven, one case per scenario)
+4. Determine expected results:
    - If an external system exists: run it to capture expected output
    - Otherwise: derive expectations from docs, specs, and source code analysis
 4. Run tests, compare actual vs expected
 5. For each failure, determine root cause:
    - Implementation wrong → fix implementation
    - Expectation wrong (based on deeper analysis) → fix expectation, document reasoning
-6. **Review**: present any non-obvious or agent-derived expectations for review before committing
-7. Update SCENARIOS-<project>.md checkboxes ([x] for passing, [~] for partial)
-8. Commit: run full test suite → stage specific files → commit with scenario stats
+7. **Review**: present any non-obvious or agent-derived expectations for review before committing
+8. **Section-local proof**: run the section's proof command (from annotations, or standard test command). This must pass before proceeding.
+9. Update SCENARIOS-<project>.md checkboxes ([x] for passing, [~] for partial). During parallel execution, do NOT update checkboxes — include them in your return format instead; the driver will apply them after batch integration proof.
+10. Commit: stage specific files → commit with scenario stats
 
 ## Test Pattern
 
