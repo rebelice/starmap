@@ -77,18 +77,23 @@ Agent(
 
 ## run-all Command
 
-Runs all remaining pending sections following the execution plan:
+Runs all remaining pending sections following the execution contract:
 1. Identify all sections with [ ] pending
-2. If an execution design exists (from the Design Execution step), follow its batch ordering. If no design exists, run sections sequentially in section-number order.
-3. For each section or batch:
+2. Read the execution contract (the `## Execution Plan` section in this skill file). If no contract exists, run sections sequentially in section-number order.
+3. **Pre-dispatch consistency check**: before dispatching each batch, verify:
+   - The work units in this batch match the contract exactly
+   - Sections marked as SEQUENTIAL within a unit are dispatched to a single worker (not split)
+   - No unit is dispatched that the contract says belongs to a later batch
+   If any inconsistency is found, stop and replan — do not override the contract.
+4. For each batch per the contract:
    a. Dispatch subagent(s):
       - **Sequential** (batch size = 1): dispatch single subagent without worktree isolation
-      - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. This is required because parallel workers in the same directory break the build (each worker changes function signatures that other workers' callers depend on). Worktree gives each worker an isolated copy where it can build and test independently.
+      - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. Worktree is required for parallel execution because workers in the same directory break the build.
    b. **Verify worktree results** (parallel only): for each worker, check that the return includes a commit SHA. If missing (worktree cleaned up), the worker failed to commit — retry immediately.
    c. **Merge worktree branches** (parallel only): merge each worker's branch to main one at a time. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
       - **Caller update conflict** (e.g., `stmt, err :=` vs `stmt, _ :=`): take the version with proper error handling (the one with `err`)
       - **Additive conflict** (both branches added code at the same insertion point): keep both additions, fix ordering if needed
-      - **Structural conflict** (incompatible changes to the same function): stop, report to user — execution design missed a dependency
+      - **Structural conflict** (incompatible changes to the same function): stop and replan — the contract missed a dependency
       After all branches merged, merge per-section test files into the canonical test file, remove per-section files, and commit.
    d. **Batch integration proof** (parallel only): run the batch integration proof command. If it fails, identify which section caused the regression.
    e. Print section summary, then continue
@@ -105,7 +110,7 @@ Runs all remaining pending sections following the execution plan:
 
 ## Execution Rules
 
-- Follow the execution design for batching decisions. Without a design, default to sequential.
+- The execution contract is binding. The driver must not override batch ordering, unit composition, or parallelism decisions. To change the plan, dispatch a new execution design subagent and replace the contract.
 - Driver never does section implementation — only dispatches, tracks, and performs integration edits (merging test files, updating SCENARIOS checkboxes, running proof commands)
 - Subagent must commit before returning
 - The driver is the sole writer of SCENARIOS-<project>.md checkboxes. Workers report results in their return format; driver applies checkbox updates after proof passes. This applies to both sequential and parallel execution.

@@ -1,12 +1,13 @@
 # Execution Design Prompt Template
 
-Before executing each phase, dispatch a fresh subagent with this prompt to design the execution architecture. This agent gets a clean context — its only job is to determine how sections should be executed while preserving coverage and correctness.
+Before executing each phase, dispatch a fresh subagent with this prompt to design the execution architecture. The output is a **binding execution contract** — the driver must follow it exactly, not treat it as a suggestion.
 
 ```
 Agent(
   description: "Design execution for phase N",
   prompt: """
     You are designing the execution architecture for one phase of a starmap.
+    Your output is a binding contract — the driver will follow it exactly.
 
     ## Input
     1. SCENARIOS file at <path> — read the sections in Phase N, including their change-surface annotations (Targets, Shared, Proof)
@@ -39,50 +40,70 @@ Agent(
     - **Batch integration proof**: what the driver verifies after merging a parallel batch (full test suite, or a targeted subset). Only needed for parallel batches.
     - **Global proof**: what the driver runs at phase end (canonical build + full test suite). Always required.
 
-    ### Step 5: Output the execution design
+    ### Step 5: Output the execution contract
 
-    Format:
+    Use this EXACT format — the driver parses it mechanically:
+
     ```
-    ## Phase N Execution Design
+    # EXECUTION CONTRACT — Phase N
 
-    ### Execution Shape: <sequential | prep-gated | parallel | integration-only>
+    ## Work Units
+    - UNIT A1: sections [2.1, 2.2] — SEQUENTIAL within unit (shared parseComparison in expr.go)
+    - UNIT A2: sections [2.3] — single section
+    - UNIT A3: sections [2.4] — single section
+    - UNIT B1: sections [2.5, 2.6] — SEQUENTIAL within unit (shared parseSelectStmt in select.go)
+    - UNIT C1: sections [2.7] — single section
+    - UNIT C2: sections [2.8] — single section
 
-    ### Change-Surface Summary
-    - Section X.1: targets [a.go] — shared: none
-    - Section X.2: targets [c.go] — shared: none
-    - Section X.3: targets [a.go, b.go] — shared: a.go (with X.1)
+    ## Batch Plan
+    - BATCH 1 (PARALLEL): units [A1, A2, A3, B1, C1, C2]
+    - BATCH 2 (SEQUENTIAL): units [D1] — depends on BATCH 1 output
 
-    ### Preparation (if prep-gated)
-    - Description: <what mechanical change to make>
-    - Success criterion: <e.g., code compiles>
+    ## Preparation (if any)
+    - PREP: <description> — success criterion: <e.g., code compiles>
+    - or: NONE
 
-    ### Batch Plan
-    - Batch 1 (parallel): X.1, X.2
-    - Batch 2 (sequential): X.3 — shares a.go with X.1
+    ## Proof
+    - SECTION-LOCAL: <command>
+    - BATCH-INTEGRATION: <command>
+    - GLOBAL: <command>
 
-    ### Proof Checkpoints
-    - Section-local: <command>
-    - Batch integration: <command> (after each parallel batch)
-    - Global: <command> (at phase end)
-
-    Estimated: N sections in M batches (vs N sequential)
+    ## Estimated
+    - Work units: N
+    - Batches: M
+    - Max parallelism: P
     ```
 
     ## Rules
     - Be conservative: if unsure whether two sections conflict, keep them sequential
     - Read actual source files to verify dependencies — don't guess from section names alone
     - A preparation step is only worth it when it unlocks 3+ parallel sections
-    - The design does NOT change what scenarios exist — only execution order and grouping
+    - The contract does NOT change what scenarios exist — only execution order and grouping
     - Never skip the three-independence check, even when it's obviously simple — state the result
+    - Sections that share functions within the same file MUST be in the same work unit as SEQUENTIAL
   """
 )
 ```
+
+## After Design: Update the Driver
+
+The execution contract must be written into the driver skill's `## Execution Plan` section, **replacing** any previous plan. There must be exactly one plan at any time — no old plans lingering alongside new ones.
+
+## Replanning
+
+If the driver needs to deviate from the contract during execution (e.g., a batch fails and the dependency graph changes), it must:
+1. Stop execution
+2. Dispatch a new execution design subagent for the remaining work
+3. Replace the old contract with the new one
+4. Resume execution under the new contract
+
+The driver cannot override the contract implicitly. Any change requires an explicit replan.
 
 ## When to Go Shallow
 
 This step is always performed, but depth scales with phase complexity:
 
-- **3 or fewer sections, all Shared: none**: one-line plan — "Sequential, standard proof. No shared surfaces."
+- **3 or fewer sections, all Shared: none**: minimal contract — "BATCH 1 (SEQUENTIAL): all units. PREP: NONE."
 - **Phase with clear prep opportunity** (e.g., signature migration): full prep-gated design
 - **Phase with many independent sections**: full parallel batching plan
 - **User explicitly asks to skip**: fall back to sequential execution
