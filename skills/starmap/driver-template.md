@@ -78,11 +78,12 @@ Runs all remaining pending sections following the execution plan:
 2. If an execution design exists (from the Design Execution step), follow its batch ordering. If no design exists, run sections sequentially in section-number order.
 3. For each section or batch:
    a. Dispatch subagent(s):
-      - If batch size = 1: dispatch single subagent as usual
-      - If batch size > 1: dispatch all subagents simultaneously. Each worker writes tests to a per-section test file (e.g., `section_1_1_test.go`). Workers still commit individually.
-      - After all workers in the batch complete, merge per-section test files into the canonical test file, remove the per-section files, and commit the merge.
-   b. **Batch integration proof** (parallel batches only): after merging all workers' changes, run the batch integration proof command from the execution design. If it fails, identify which section caused the regression before continuing.
-   c. Print section summary, then continue
+      - **Sequential** (batch size = 1): dispatch single subagent without worktree isolation
+      - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. This is required because parallel workers in the same directory break the build (each worker changes function signatures that other workers' callers depend on). Worktree gives each worker an isolated copy where it can build and test independently.
+   b. **Verify worktree results** (parallel only): for each worker, check that the return includes a worktree branch path. If a worker's worktree was cleaned up (no branch returned), it means the worker failed to commit — retry immediately.
+   c. **Merge worktree branches** (parallel only): merge each worker's branch to main one at a time. After each merge, run a quick build check. If merge conflicts occur, resolve them (the execution design should have predicted these). After all branches merged, merge per-section test files into the canonical test file, remove per-section files, and commit.
+   d. **Batch integration proof** (parallel only): run the batch integration proof command. If it fails, identify which section caused the regression.
+   e. Print section summary, then continue
 4. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
 5. Stop on fatal failure (build broken); continue on partial ([~])
 6. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation

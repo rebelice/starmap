@@ -51,6 +51,7 @@ After each section completes:
 2. Stage only modified files by name (implementation + tests). Do NOT stage SCENARIOS-<project>.md — the driver updates it.
 3. Commit with message: `feat(<project>): verify section X.Y — <name>`
 4. Include scenario stats in commit body (N/M passing, any partial/skipped)
+5. **Verify the commit exists** — run `git log --oneline -1` and include the commit SHA in your return. This is critical when running in a worktree: if you don't commit, the worktree is automatically cleaned up and your work is lost.
 
 ## Triage
 
