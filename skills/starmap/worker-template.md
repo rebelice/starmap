@@ -65,6 +65,7 @@ Do not attempt to fix everything in one pass. Small, verified commits beat heroi
 
 ## Rules
 
+- When running in a worktree, all file operations use the worktree directory as the working directory — never read or write files in the main repo path
 - Once expectations are reviewed and committed, treat them as authoritative — fix implementation, not expectations
 - If deeper analysis reveals an expectation was wrong, fix it with documented reasoning
 - Run section-local proof after fixes — full test suite is the driver's job at batch/global proof

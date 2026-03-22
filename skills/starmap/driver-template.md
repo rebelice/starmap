@@ -68,6 +68,10 @@ Agent(
     - Files modified: <list of all files you changed>
     - Shared files touched: <any files marked "Shared" in the section's annotations>
     - Proof result: pass/fail (did section-local proof pass?)
+    - Commit SHA: <from git log --oneline -1>
+    - Checkbox updates: <which scenarios to mark [x] or [~]>
+
+    All file paths must be relative to the worktree root (when in worktree) or project root (when sequential). Do not reference the main repo path from inside a worktree.
   """
 )
 
@@ -80,8 +84,12 @@ Runs all remaining pending sections following the execution plan:
    a. Dispatch subagent(s):
       - **Sequential** (batch size = 1): dispatch single subagent without worktree isolation
       - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. This is required because parallel workers in the same directory break the build (each worker changes function signatures that other workers' callers depend on). Worktree gives each worker an isolated copy where it can build and test independently.
-   b. **Verify worktree results** (parallel only): for each worker, check that the return includes a worktree branch path. If a worker's worktree was cleaned up (no branch returned), it means the worker failed to commit — retry immediately.
-   c. **Merge worktree branches** (parallel only): merge each worker's branch to main one at a time. After each merge, run a quick build check. If merge conflicts occur, resolve them (the execution design should have predicted these). After all branches merged, merge per-section test files into the canonical test file, remove per-section files, and commit.
+   b. **Verify worktree results** (parallel only): for each worker, check that the return includes a commit SHA. If missing (worktree cleaned up), the worker failed to commit — retry immediately.
+   c. **Merge worktree branches** (parallel only): merge each worker's branch to main one at a time. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
+      - **Caller update conflict** (e.g., `stmt, err :=` vs `stmt, _ :=`): take the version with proper error handling (the one with `err`)
+      - **Additive conflict** (both branches added code at the same insertion point): keep both additions, fix ordering if needed
+      - **Structural conflict** (incompatible changes to the same function): stop, report to user — execution design missed a dependency
+      After all branches merged, merge per-section test files into the canonical test file, remove per-section files, and commit.
    d. **Batch integration proof** (parallel only): run the batch integration proof command. If it fails, identify which section caused the regression.
    e. Print section summary, then continue
 4. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
@@ -123,7 +131,7 @@ When generating the driver skill, replace these with project-specific details:
 | Main context (driver) | Subagent (worker) |
 |------------------------|-------------------|
 | `status` — read checkboxes | Read pending scenarios |
-| `plan` — show order | Write reference test cases |
-| `next` — pick & dispatch | Run tests, analyze diffs |
-| `report` — aggregate stats | Fix code, verify no regression |
-| Track overall progress | Update checkboxes, commit |
+| `plan` — show order | Write tests, fix implementation |
+| `next` — pick & dispatch | Run section-local proof |
+| `report` — aggregate stats | Commit implementation + tests |
+| Update checkboxes, merge branches | Report results (never writes SCENARIOS) |
