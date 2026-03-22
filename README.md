@@ -2,7 +2,7 @@
 
 You tell your AI agent: "make our JSON formatter match `jq` exactly." Simple enough goal. But what does "exactly" actually mean? Hundreds of edge cases — numeric precision, unicode escapes, key ordering, nested indentation, trailing commas. Your agent fixes a few, misses dozens more, and you have no idea how far along you really are.
 
-Starmap solves this. It forces your agent to enumerate *every* scenario upfront, then work through them one by one with a checkbox for each. You always know exactly where you stand.
+Starmap solves this. It forces your agent to enumerate *every* scenario upfront, then work through them one by one with a checkbox for each. You always know exactly where you stand. And when the work is large enough, Starmap analyzes file-level dependencies to safely parallelize sections — without breaking the build or losing proof of correctness.
 
 ## How It Works
 
@@ -10,7 +10,11 @@ You start with `/starmap init` and describe your goal. That's it — one questio
 
 Your agent then goes and reads the code, the docs, the existing tests. It comes back with a proposal: "here's what I found, here's how I'd verify correctness, and here's the 170 scenarios I think we need to cover across 13 sections. Does this look right?"
 
-Once you say go, Starmap generates a `SCENARIOS-<project>.md` file — your map — plus a pair of project-specific driver and worker skills. The driver dispatches a fresh worker for each section. Each worker writes tests, checks them against the reference, fixes what's broken, ticks the checkboxes, and commits. You can watch, step in, or let it run on autopilot.
+Once you say go, Starmap generates a `SCENARIOS-<project>.md` file — your map — plus a pair of project-specific driver and worker skills.
+
+Before each phase executes, a dedicated subagent analyzes which sections can safely run in parallel by checking file-level dependencies. It produces an execution contract: which sections are batched together, which must run sequentially, and what proof checkpoints to run after each batch. The driver follows this contract exactly.
+
+Each worker writes tests, checks them against the reference, fixes what's broken, and commits. Parallel workers run in isolated git worktrees so they can build and test independently. After a batch completes, the driver merges the work, runs integration proof, and updates the checkboxes. You can watch, step in, or let it run on autopilot.
 
 ```
 /json-formatter-driver status    → see exactly where you stand
@@ -105,13 +109,14 @@ Uninstall starmap by removing ~/.claude/skills/starmap and ~/.claude/skills/star
 
 ## What Gets Generated
 
-Running `/starmap init` creates three things:
+Running `/starmap init` creates three things, plus an execution contract per phase:
 
 | Artifact | Purpose |
 |----------|---------|
-| **SCENARIOS-<project>.md** | The map — every scenario with a checkbox |
+| **SCENARIOS-<project>.md** | The map — every scenario with a checkbox + change-surface annotations |
 | **Worker skill** | Executes one section: write tests, verify against reference, fix, commit |
-| **Driver skill** | Dispatches workers, tracks progress, never does implementation itself |
+| **Driver skill** | Dispatches workers, follows execution contract, runs proof checkpoints |
+| **Execution contract** | Per-phase plan: which sections are parallel, which sequential, what proof to run |
 
 ## Philosophy
 
@@ -119,6 +124,8 @@ Running `/starmap init` creates three things:
 - **Checkboxes are truth** — `SCENARIOS-<project>.md` is the single source of progress, always up to date
 - **Expectations don't bend** — once a scenario's expected result is reviewed, the implementation adapts to it, not the other way around
 - **Monotonic progress** — scenarios never regress once passing
+- **Three kinds of independence** — semantic (different features), change-surface (different files), proof (non-interfering verification). All three must hold before sections run in parallel.
+- **Proof-preserving parallelization** — parallel execution is a constrained optimization, not a default. Section-local proof, batch integration proof, and global proof form a layered verification stack.
 
 ## Acknowledgments
 
