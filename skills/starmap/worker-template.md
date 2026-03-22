@@ -6,7 +6,7 @@ Generate a worker skill at `~/.claude/skills/<project>-worker/SKILL.md` using th
 ---
 name: <project>-worker
 description: Use when implementing a batch of <project> scenarios. Takes a section
-  from SCENARIOS-<project>.md, writes tests, runs verification, fixes differences, updates progress.
+  from SCENARIOS-<project>.md, writes tests, runs verification, fixes differences, reports results.
 ---
 
 # <Project> Worker
@@ -25,12 +25,12 @@ Execute one section of scenarios.
 4. Determine expected results:
    - If an external system exists: run it to capture expected output
    - Otherwise: derive expectations from docs, specs, and source code analysis
-4. Run tests, compare actual vs expected
-5. For each failure, determine root cause:
+5. Run tests, compare actual vs expected
+6. For each failure, determine root cause:
    - Implementation wrong → fix implementation
    - Expectation wrong (based on deeper analysis) → fix expectation, document reasoning
 7. **Review**: present any non-obvious or agent-derived expectations for review before committing
-8. **Section-local proof**: run the section's proof command (from annotations, or standard test command). This must pass before proceeding.
+8. **Section-local proof**: run the section's Proof command from annotations (or the default test command if "standard"). This must pass before proceeding.
 9. Report checkbox updates in your return format (which scenarios are [x] passing, [~] partial). The driver is responsible for updating SCENARIOS-<project>.md — workers never write to the SCENARIOS file directly.
 10. Commit: stage specific files (implementation + tests only, NOT SCENARIOS) → commit with scenario stats
 

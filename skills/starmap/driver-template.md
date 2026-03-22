@@ -20,7 +20,7 @@ description: Use when driving the <project> scenario coverage effort. Manages pr
 - **status** — Show progress per section. Read SCENARIOS-<project>.md with the Read tool and count checkboxes (`- [x]` = pass, `- [~]` = partial, `- [ ]` = pending) per section. Do NOT use shell commands (awk/gawk/sed) to parse — use the Read tool and count in your response.
 - **next** — Dispatch next pending section as a fresh subagent
 - **run <section>** — Dispatch specific section as a fresh subagent
-- **run-all** — Run all remaining pending sections (auto-pilot). Follows the execution plan if one exists, otherwise sequential.
+- **run-all** — Run all remaining pending sections (auto-pilot). Follows the execution contract if one exists, otherwise sequential.
 - **plan** — Show recommended execution order
 - **report** — Full progress report. Same approach as `status` — read the file, count checkboxes, summarize.
 
@@ -67,6 +67,7 @@ Agent(
     - Partial/skipped: <list with reasons>
     - Files modified: <list of all files you changed>
     - Shared files touched: <any files marked "Shared" in the section's annotations>
+    - Out-of-Targets files: <files modified that were NOT in the section's Targets annotation, or "none">
     - Proof result: pass/fail (did section-local proof pass?)
     - Commit SHA: <from git log --oneline -1>
     - Checkbox updates: <which scenarios to mark [x] or [~]>
@@ -79,11 +80,12 @@ Agent(
 
 Runs all remaining pending sections following the execution contract:
 1. Identify all sections with [ ] pending
-2. Read the execution contract (the `## Execution Plan` section in this skill file). If no contract exists, run sections sequentially in section-number order.
+2. Read the execution contract (the `## Execution Contract` section in this skill file). If no contract exists, run sections sequentially in section-number order.
 3. **Pre-dispatch consistency check**: before dispatching each batch, verify:
    - The work units in this batch match the contract exactly
    - Sections marked as SEQUENTIAL within a unit are dispatched to a single worker (not split)
    - No unit is dispatched that the contract says belongs to a later batch
+   - Proof commands in the contract are consistent with SCENARIOS annotations (per-section overrides take precedence)
    If any inconsistency is found, stop and replan — do not override the contract.
 4. For each batch per the contract:
    a. Dispatch subagent(s):
@@ -91,16 +93,18 @@ Runs all remaining pending sections following the execution contract:
       - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. Worktree is required for parallel execution because workers in the same directory break the build.
    b. **Verify worktree results** (parallel only): for each worker, check that the return includes a commit SHA. If missing (worktree cleaned up), the worker failed to commit — retry immediately.
    c. **Merge worktree branches** (parallel only): merge each worker's branch to main one at a time. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
-      - **Caller update conflict** (e.g., `stmt, err :=` vs `stmt, _ :=`): take the version with proper error handling (the one with `err`)
+      - **Caller update conflict** (two versions of the same call site — e.g., one with error handling, one without): take the more complete version
       - **Additive conflict** (both branches added code at the same insertion point): keep both additions, fix ordering if needed
-      - **Structural conflict** (incompatible changes to the same function): stop and replan — the contract missed a dependency
+      - **Structural conflict** (incompatible changes to the same function body): stop and replan — the contract missed a dependency
       After all branches merged, merge per-section test files into the canonical test file, remove per-section files, and commit.
    d. **Batch integration proof** (parallel only): run the batch integration proof command. If it fails, identify which section caused the regression.
-   e. Print section summary, then continue
-4. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
-5. Stop on fatal failure (build broken); continue on partial ([~])
-6. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
-7. Resumable: re-running picks up where it left off (checkboxes are durable)
+   e. **Check out-of-Targets**: if any worker reports files modified outside its Targets annotation, note this for future replanning — the SCENARIOS annotations need updating.
+   f. Print section summary, then continue
+5. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
+6. Stop on fatal failure (build broken); continue on partial ([~])
+7. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
+8. Resumable: re-running picks up where it left off (checkboxes are durable)
+9. If a phase has 0 pending sections, skip to global proof for that phase, then move to the next phase
 
 ## Proof Checkpoints
 

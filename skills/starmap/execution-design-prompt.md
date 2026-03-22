@@ -64,7 +64,8 @@ Agent(
     - or: NONE
 
     ## Proof
-    - SECTION-LOCAL: <command>
+    - SECTION-LOCAL (default): <command>
+    - SECTION-LOCAL (overrides): UNIT A1: <command>, UNIT C4: <command>
     - BATCH-INTEGRATION: <command>
     - GLOBAL: <command>
 
@@ -87,7 +88,7 @@ Agent(
 
 ## After Design: Update the Driver
 
-The execution contract must be written into the driver skill's `## Execution Plan` section, **replacing** any previous plan. There must be exactly one plan at any time — no old plans lingering alongside new ones.
+The execution contract must be written into the driver skill's `## Execution Contract` section, **replacing** any previous contract. There must be exactly one contract at any time — no old contracts lingering alongside new ones.
 
 ## Replanning
 
@@ -103,7 +104,7 @@ The driver cannot override the contract implicitly. Any change requires an expli
 
 This step is always performed, but depth scales with phase complexity:
 
-- **3 or fewer sections, all Shared: none**: minimal contract — "BATCH 1 (SEQUENTIAL): all units. PREP: NONE."
+- **3 or fewer sections, all Shared: none**: use the same EXACT format but with a single batch, e.g., one UNIT per section, one BATCH (SEQUENTIAL), PREP: NONE, default proof commands
 - **Phase with clear prep opportunity** (e.g., signature migration): full prep-gated design
 - **Phase with many independent sections**: full parallel batching plan
 - **User explicitly asks to skip**: fall back to sequential execution

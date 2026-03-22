@@ -70,7 +70,7 @@ Dispatch a fresh review subagent using ./reviewer-prompt.md. The review now cove
 
 ### Step 6: Design Execution (per phase)
 
-Before executing each phase, dispatch a fresh subagent using ./execution-design-prompt.md to produce an execution plan. This agent gets a clean context — its only job is execution architecture.
+Before executing each phase, dispatch a fresh subagent using ./execution-design-prompt.md to produce an execution contract. This agent gets a clean context — its only job is execution architecture.
 
 It reads the change-surface annotations from SCENARIOS, verifies them against the actual codebase, and classifies the phase into an execution shape:
 
@@ -81,7 +81,9 @@ It reads the change-surface annotations from SCENARIOS, verifies them against th
 
 It also defines proof checkpoints: section-local proof (worker verifies), batch integration proof (driver verifies after merge), and global proof (phase-end full verification).
 
-This step is always performed but may be shallow. For phases with 3 or fewer clearly-isolated sections, a one-line plan suffices: "Sequential, standard proof, no shared surfaces."
+This step is always performed but may be shallow. For phases with 3 or fewer clearly-isolated sections, a minimal contract suffices.
+
+If returning to a project that already has SCENARIOS and generated skills, skip to Step 6 (or Step 7 if a contract already exists).
 
 ### Step 7: Execute
 
@@ -104,7 +106,7 @@ Execution follows the staged verification model:
 ## Anti-Patterns
 
 - **Scenarios too vague**: "handle all numeric types" — break into one scenario per type, because vague scenarios can't be verified as pass/fail
-- **Worker doing too much**: if 20+ scenarios fail, fix 5-10, commit, let driver re-dispatch the rest — small verified commits beat heroic efforts that break things
+- **Worker doing too much**: if 10+ scenarios fail, fix up to 10, commit, let driver re-dispatch the rest — small verified commits beat heroic efforts that break things
 - **Skipping exploration**: jumping to scenarios without understanding the territory leads to gaps that are expensive to backfill later
 - **Unreviewed expectations**: agent-generated expectations must be reviewed before becoming authoritative — a wrong expectation silently corrupts all downstream work
 - **Not updating checkboxes**: progress is invisible if SCENARIOS-<project>.md isn't updated — the whole system depends on checkboxes being the single source of truth
