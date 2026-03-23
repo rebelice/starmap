@@ -92,7 +92,7 @@ Runs all remaining pending sections following the execution contract:
       - **Sequential** (batch size = 1): dispatch single subagent without worktree isolation
       - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. Worktree is required for parallel execution because workers in the same directory break the build.
    b. **Verify worktree results** (parallel only): for each worker, check that the return includes a commit SHA. If missing (worktree cleaned up), the worker failed to commit — retry immediately.
-   c. **Merge worktree branches** (parallel only): merge each worker's branch to main one at a time. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
+   c. **Merge worktree branches** (parallel only): squash-merge each worker's branch to main one at a time (`git merge --squash <branch> && git commit`). This keeps git history linear — no merge commits, no branch spaghetti. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
       - **Caller update conflict** (two versions of the same call site — e.g., one with error handling, one without): take the more complete version
       - **Additive conflict** (both branches added code at the same insertion point): keep both additions, fix ordering if needed
       - **Structural conflict** (incompatible changes to the same function body): stop and replan — the contract missed a dependency
