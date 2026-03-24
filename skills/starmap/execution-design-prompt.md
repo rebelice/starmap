@@ -1,6 +1,8 @@
 # Execution Design Prompt Template
 
-Before executing each phase, dispatch a fresh subagent with this prompt to design the execution architecture. The output is a **binding execution contract** — the driver must follow it exactly, not treat it as a suggestion.
+Dispatch a fresh subagent with this prompt during Stage 2. The output is a **binding execution contract** — the driver must follow it exactly.
+
+This agent handles the full Stage 2.1 + 2.3 scope: analyze the implementation space, determine file targets per section, design parallelization, and produce the execution contract.
 
 ```
 Agent(
@@ -10,34 +12,44 @@ Agent(
     Your output is a binding contract — the driver will follow it exactly.
 
     ## Input
-    1. SCENARIOS file at <path> — read the sections in Phase N, including their change-surface annotations (Targets, Shared, Proof)
-    2. The codebase — read the actual source files to verify annotations
-    3. Execution log at <log-path> (if exists) — actual files_modified from prior phases
-    4. The change-surface annotations per section (Targets, Shared, Proof fields)
+    1. SCENARIOS file at <path> — read the sections in Phase N (scenarios only, no implementation details)
+    2. The codebase — read actual source files, imports, and module structure
+    3. Execution log from prior phases (if any) — actual files_modified data
+    4. Whether this is a greenfield implementation or modifying existing code
 
     ## Your Task
 
-    ### Step 1: Verify change-surface annotations
-    Read each section's Targets/Shared annotations. Check them against the actual codebase (imports, callers, function references). Update if wrong. This is the foundation — everything downstream depends on accurate annotations.
+    ### Step 1: Determine file targets per section
+
+    For each section in this phase, determine which files it will need to create or modify.
+
+    **For existing codebases:** analyze the current code to identify which files each section's scenarios map to.
+
+    **For greenfield projects:** design the file structure. Consider splitting into per-section or per-type files to enable parallelism. Putting everything in one file guarantees sequential execution — only do this when sections genuinely need to share state within the same file.
+
+    Output a file-targets table:
+    - Section X.1: targets [a.go, a_test.go]
+    - Section X.2: targets [b.go, b_test.go]
+    - Section X.3: targets [a.go, c_test.go] — shares a.go with X.1
 
     ### Step 2: Classify three kinds of independence
-    For each pair of sections in this phase, assess:
-    - **Semantic independence**: different features/concepts (almost always yes for different sections)
-    - **Change-surface independence**: no shared files in Targets (check the Shared annotations)
+    For each pair of sections, assess based on the file targets from Step 1:
+    - **Semantic independence**: different features/concepts (almost always yes)
+    - **Change-surface independence**: no shared files in targets
     - **Proof independence**: one section's test results cannot be invalidated by the other's changes
 
     All three must hold for safe parallel execution.
 
     ### Step 3: Choose execution shape
     Classify the phase into one of:
-    - **Sequential**: sections have deep coupling or shared surfaces that can't be prepped away
-    - **Prep-gated**: a preparation step (stubs, shared scaffolding, interface changes) breaks the dependency chain and unlocks parallel execution. Only worth it when prep unlocks 3+ parallel sections.
+    - **Sequential**: deep coupling or shared surfaces that can't be prepped away
+    - **Prep-gated**: a preparation step (stubs, scaffolding, interface skeleton) breaks the dependency chain and unlocks parallel execution. Only worth it when prep unlocks 3+ parallel sections.
     - **Parallel**: sections are independent on all three dimensions — batch them
-    - **Integration-only**: sections can run in parallel but require a dedicated integration step afterward (shared test surface, coordinated caller update)
+    - **Integration-only**: sections can run in parallel but need a dedicated integration step afterward
 
     ### Step 4: Define proof checkpoints
     - **Section-local proof**: what each worker verifies (usually its own tests pass)
-    - **Batch integration proof**: what the driver verifies after merging a parallel batch (full test suite, or a targeted subset). Only needed for parallel batches.
+    - **Batch integration proof**: what the driver verifies after merging a parallel batch. Only needed for parallel batches.
     - **Global proof**: what the driver runs at phase end (canonical build + full test suite). Always required.
 
     ### Step 5: Output the execution contract
@@ -47,17 +59,19 @@ Agent(
     ```
     # EXECUTION CONTRACT — Phase N
 
+    ## File Targets
+    - SECTION 1.1: targets [schema.go, schema_test.go]
+    - SECTION 1.2: targets [table.go, table_test.go]
+    - SECTION 1.3: targets [table.go, column.go, column_test.go] — shares table.go with 1.2
+
     ## Work Units
-    - UNIT A1: sections [2.1, 2.2] — SEQUENTIAL within unit (shared parseComparison in expr.go)
-    - UNIT A2: sections [2.3] — single section
-    - UNIT A3: sections [2.4] — single section
-    - UNIT B1: sections [2.5, 2.6] — SEQUENTIAL within unit (shared parseSelectStmt in select.go)
-    - UNIT C1: sections [2.7] — single section
-    - UNIT C2: sections [2.8] — single section
+    - UNIT A1: sections [1.1] — single section, targets [schema.go, schema_test.go]
+    - UNIT A2: sections [1.2, 1.3] — SEQUENTIAL within unit (shared table.go)
+    - UNIT B1: sections [1.4] — single section, targets [index.go, index_test.go]
 
     ## Batch Plan
-    - BATCH 1 (PARALLEL): units [A1, A2, A3, B1, C1, C2]
-    - BATCH 2 (SEQUENTIAL): units [D1] — depends on BATCH 1 output
+    - BATCH 1 (PARALLEL): units [A1, A2, B1]
+    - BATCH 2 (SEQUENTIAL): units [C1] — depends on BATCH 1
 
     ## Preparation (if any)
     - PREP: <description> — success criterion: <e.g., code compiles>
@@ -65,7 +79,7 @@ Agent(
 
     ## Proof
     - SECTION-LOCAL (default): <command>
-    - SECTION-LOCAL (overrides): UNIT A1: <command>, UNIT C4: <command>
+    - SECTION-LOCAL (overrides): UNIT A1: <command>, UNIT B1: <command>
     - BATCH-INTEGRATION: <command>
     - GLOBAL: <command>
 
@@ -82,13 +96,16 @@ Agent(
     - The contract does NOT change what scenarios exist — only execution order and grouping
     - Never skip the three-independence check, even when it's obviously simple — state the result
     - Sections that share functions within the same file MUST be in the same work unit as SEQUENTIAL
+    - For greenfield: prefer per-section files over monolithic files when it enables parallelism
   """
 )
 ```
 
 ## After Design: Update the Driver
 
-The execution contract must be written into the driver skill's `## Execution Contract` section, **replacing** any previous contract. There must be exactly one contract at any time — no old contracts lingering alongside new ones.
+The execution contract must be written into the driver skill's `## Execution Contract` section, **replacing** any previous contract. There must be exactly one contract at any time.
+
+The File Targets section in the contract is the authoritative source for which files each section modifies. The driver passes these targets to each worker in the dispatch prompt.
 
 ## Replanning
 
@@ -98,13 +115,11 @@ If the driver needs to deviate from the contract during execution (e.g., a batch
 3. Replace the old contract with the new one
 4. Resume execution under the new contract
 
-The driver cannot override the contract implicitly. Any change requires an explicit replan.
-
 ## When to Go Shallow
 
 This step is always performed, but depth scales with phase complexity:
 
-- **3 or fewer sections, all Shared: none**: use the same EXACT format but with a single batch, e.g., one UNIT per section, one BATCH (SEQUENTIAL), PREP: NONE, default proof commands
+- **3 or fewer sections, no shared files**: use the same EXACT format but with a single batch
 - **Phase with clear prep opportunity** (e.g., signature migration): full prep-gated design
 - **Phase with many independent sections**: full parallel batching plan
 - **User explicitly asks to skip**: fall back to sequential execution

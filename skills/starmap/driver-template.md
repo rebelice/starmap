@@ -41,6 +41,10 @@ Agent(
     SCENARIOS-<project>.md location: <path>
     Project directory: <path>
 
+    ## File Targets (from execution contract)
+    Target files for this section: <list from contract's File Targets section>
+    Proof command: <from contract's Proof section>
+
     ## Existing Infrastructure
     Before writing any test code, read the existing test files to understand:
     - Test harness and helpers
@@ -66,13 +70,12 @@ Agent(
     - Fixes applied: <list>
     - Partial/skipped: <list with reasons>
     - Files modified: <list of all files you changed>
-    - Shared files touched: <any files marked "Shared" in the section's annotations>
-    - Out-of-Targets files: <files modified that were NOT in the section's Targets annotation, or "none">
+    - Out-of-Targets files: <files modified that were NOT in the dispatch targets, or "none">
     - Proof result: pass/fail (did section-local proof pass?)
     - Commit SHA: <from git log --oneline -1>
     - Checkbox updates: <which scenarios to mark [x] or [~]>
 
-    All file paths must be relative to the worktree root (when in worktree) or project root (when sequential). Do not reference the main repo path from inside a worktree.
+    All file paths must be relative to the worktree root (when in worktree) or project root (when sequential).
   """
 )
 
@@ -85,7 +88,7 @@ Runs all remaining pending sections following the execution contract:
    - The work units in this batch match the contract exactly
    - Sections marked as SEQUENTIAL within a unit are dispatched to a single worker (not split)
    - No unit is dispatched that the contract says belongs to a later batch
-   - Proof commands in the contract are consistent with SCENARIOS annotations (per-section overrides take precedence)
+   - Proof commands in the contract match the dispatch prompts being sent to workers
    If any inconsistency is found, stop and replan — do not override the contract.
 4. For each batch per the contract:
    a. Dispatch subagent(s):
@@ -98,7 +101,7 @@ Runs all remaining pending sections following the execution contract:
       - **Structural conflict** (incompatible changes to the same function body): stop and replan — the contract missed a dependency
       After all branches merged, merge per-section test files into the canonical test file, remove per-section files, and commit.
    d. **Batch integration proof** (parallel only): run the batch integration proof command. If it fails, identify which section caused the regression.
-   e. **Check out-of-Targets**: if any worker reports files modified outside its Targets annotation, note this for future replanning — the SCENARIOS annotations need updating.
+   e. **Check out-of-Targets**: if any worker reports files modified outside its declared targets, note this — the execution contract's File Targets may need updating via replan.
    f. Print section summary, then continue
 5. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
 6. Stop on fatal failure (build broken); continue on partial ([~])
