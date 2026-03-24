@@ -1,78 +1,58 @@
-# Starmap Reviewer Prompt Template
+# Coverage Review Prompt Template
 
-Dispatch a fresh review subagent with this prompt **before** starting execution. The reviewer has NO prior context — it reads everything fresh and evaluates independently.
-
-**Purpose:** Catch gaps, structural issues, and sizing problems before spending hours executing a flawed plan.
-
-Dispatch using your platform's subagent mechanism (e.g., Agent tool in Claude Code):
+Dispatch a fresh review subagent with this prompt at the end of Stage 1 (Coverage). The reviewer evaluates ONLY whether the scenario list is complete — not implementation approach, file structure, or execution strategy.
 
 ```
 Agent(
-  description: "Review starmap decomposition",
+  description: "Review starmap coverage",
   prompt: """
-    You are reviewing a starmap (scenario-driven development plan). Read the
-    following files and evaluate whether the decomposition is sound:
+    You are reviewing a starmap's scenario coverage. Read the SCENARIOS file
+    and evaluate whether it comprehensively covers the goal.
 
-    1. SCENARIOS-<project>.md at <path> — the master scenario list
-    2. Worker skill at <worker-skill-path>
-    3. Driver skill at <driver-skill-path>
+    SCENARIOS-<project>.md at <path>
 
-    Evaluate and report on:
+    Evaluate ONLY coverage — do NOT evaluate implementation details
+    (there shouldn't be any in the SCENARIOS file).
 
     **Completeness:**
     - Are there obvious gaps? Missing feature areas, edge cases, or error scenarios?
-    - Does the scenario count feel right for the scope? (200-500 is typical)
+    - Does the scenario count feel right for the scope? (50-500 depending on project size)
     - Are all variants of each feature enumerated (not just happy path)?
 
     **Structure:**
     - Are phases ordered by dependency? (Can Phase 2 be done without Phase 1?)
-    - Are sections within a phase properly scoped as coverage units? (Execution order is decided by execution design, not assumed here.)
+    - Are sections properly scoped as coverage units?
     - Is each scenario concrete and binary (pass/fail, not "mostly works")?
-    - Are scenarios named by what they test, not how?
+    - Are scenarios named by what they test, not how to implement them?
 
     **Granularity:**
     - Too coarse? (e.g., "all numeric types" as one scenario)
     - Too fine? (e.g., separate scenarios for trivially similar cases)
     - Are sections sized reasonably? (5-25 scenarios each)
 
-    **Worker/Driver fit:**
-    - Does the worker process match the verification surface?
-    - Does the commit workflow make sense for the batch size?
-    - Are the driver commands sufficient to manage the work?
-
     **Reference quality:**
     - Are the reference sources sufficient for this goal?
-    - Are there areas where expectations are especially uncertain and need careful review?
+    - Are there areas where expectations are especially uncertain?
     - Is the verification strategy clear and reproducible?
 
-    **Change-surface annotations:**
-    - Are Targets plausible? Do the listed files exist and make sense for the section's scenarios?
-    - Are Shared annotations correct? Spot-check: read a few target files and check whether other sections also reference them.
-    - Are there obvious shared surfaces that no section has declared? (e.g., a central dispatch file, a shared test helper)
-    - Rework is mandatory if multiple sections claim "Shared: none" but clearly target the same files.
-
-    **Proof boundaries:**
-    - Is the section-level proof command specific enough to catch regressions?
-    - Is the global proof command comprehensive enough for the project scope?
-    - Are there sections where proof independence is dubious? (e.g., integration tests where one section's changes could silently break another's expectations)
+    **Contamination check:**
+    - Does the SCENARIOS file contain file targets, code architecture, or
+      execution strategy? If so, flag it — implementation details belong
+      in Stage 2 (Design), not in SCENARIOS.
 
     **Output format:**
     - Approved — no significant issues
-    - Suggestions — list specific improvements (add scenario X, merge sections Y and Z, fix Shared annotation on section 1.3)
-    - Rework needed — fundamental issues that must be fixed before starting
+    - Suggestions — list specific improvements (add scenario X, merge sections Y and Z)
+    - Rework needed — fundamental coverage gaps that must be fixed
 
     Be specific. Don't say "consider adding more edge cases" — say "Section 1.1 is
-    missing LATERAL JOIN and recursive CTE scenarios" or "Section 2.3 claims Shared: none
-    but targets parser.go which is also in Section 2.5's Targets."
+    missing LATERAL JOIN and recursive CTE scenarios."
   """
 )
 ```
 
-## When to Skip Review
+## When to Skip
 
-You may skip review only if:
-- The starmap has fewer than 50 scenarios (small scope)
-- The user explicitly asks to skip
-- This is a re-review after incorporating previous feedback
-
-In all other cases, review is mandatory. 15 minutes of review saves hours of rework.
+- Fewer than 50 scenarios (small scope)
+- User explicitly asks to skip
+- Re-review after incorporating previous feedback

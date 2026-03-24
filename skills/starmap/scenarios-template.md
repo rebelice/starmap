@@ -2,13 +2,14 @@
 
 Use this structure when charting a starmap (SCENARIOS-<project>.md).
 
+SCENARIOS is a pure coverage document — it defines what must be true, not how to implement it. No file targets, no code architecture, no execution strategy. Those belong in Stage 2 (Design).
+
 ```markdown
 # <Project> Scenarios
 
 > Goal: <one-line goal>
 > Verification: <how to verify each scenario>
 > Reference sources: <external system, docs, source code, specs — list all that apply>
-> Proof: <section-local proof command> | <batch integration proof command> | <global proof command>
 
 Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
@@ -18,20 +19,12 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 
 ### 1.1 <Section Name>
 
-> Targets: <files this section will modify>
-> Shared: <files shared with other sections in this phase, or "none">
-> Proof: <section-specific verification command, or "standard">
-
 - [ ] Scenario A — concrete, testable statement
 - [ ] Scenario B — another concrete case
 - [ ] Scenario C
 ...
 
 ### 1.2 <Section Name>
-
-> Targets: <files>
-> Shared: <files or "none">
-> Proof: <command or "standard">
 
 - [ ] Scenario D
 - [ ] Scenario E
@@ -40,11 +33,6 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 ## Phase 2: <Next Layer>
 
 ### 2.1 <Section Name>
-
-> Targets: <files>
-> Shared: <files or "none">
-> Proof: <command or "standard">
-
 ...
 ```
 
@@ -55,24 +43,24 @@ Status: [ ] pending, [x] passing, [~] partial (needs upstream change)
 - Example: basic cases before combinations, single features before interactions
 
 **Sections** within a phase are coverage units:
-- Each section is one worker invocation
 - Target 5-25 scenarios per section
-- Execution order (sequential, parallel, or prep-gated) is decided by the execution design step, not assumed at chart time
+- Group by feature area or object type
+- Execution order (sequential, parallel, or prep-gated) is decided in Stage 2, not here
 
 **Scenarios** are concrete and binary:
 - Each is one specific test case (a SQL statement, an API call, a specific input)
 - Pass or fail, no "mostly works"
 - Named by what they test: `SELECT FROM with alias` not `test alias completion`
+- Describes the expected behavior, not the implementation approach
 
-## Change-Surface Annotations
+## What Does NOT Belong in SCENARIOS
 
-Each section has three annotation fields:
+- File targets (`Targets: diff.go`) — this is an architecture decision, made in Stage 2
+- Shared file annotations (`Shared: parser.go`) — this is change-surface analysis, done in Stage 2
+- Proof commands (`Proof: go test -run TestX`) — this is test strategy, decided in Stage 2
+- Implementation notes ("use a switch statement", "split into per-type files") — Stage 2
 
-- **Targets**: files this section will create or modify. Best guess at chart time, refined during execution design. Examples: `lib/formatter/primitives.go, lib/formatter/primitives_test.go`
-- **Shared**: files that also appear in another section's Targets within the same phase. "none" when fully isolated. This is the key signal for parallelization decisions.
-- **Proof**: the verification command that proves this section's work. "standard" means use the project's default test command. Can be narrower (a specific test file) or broader (requires integration test).
-
-These annotations force the question "what does this section actually touch?" even when the answer is simple. A section with `Shared: none` is a one-line annotation, not a burden. But skipping the question entirely is how parallel execution breaks.
+If you find yourself writing about files, functions, or code structure in SCENARIOS, stop — you're mixing coverage with design.
 
 ## How to Be Thorough
 

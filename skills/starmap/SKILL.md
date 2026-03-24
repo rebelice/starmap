@@ -17,92 +17,110 @@ Not for tasks with fewer than 50 scenarios — use a regular implementation plan
 ## Three Stages
 
 ```
-/starmap init  →  Plan  →  Design  →  ready to execute
+/starmap init  →  Coverage  →  Design  →  Execute
 ```
 
-Starmap works in three stages. Each stage has a clear deliverable and a user checkpoint before moving on.
+Each stage has one job, one deliverable, and a user checkpoint.
 
-| Stage | What happens | Deliverable |
-|-------|-------------|-------------|
-| **Plan** | Explore, enumerate scenarios, generate skills, review | SCENARIOS-<project>.md + worker + driver skills |
-| **Design** | Analyze change surfaces, build execution contract | Execution contract written into driver skill |
-| **Execute** | Run sections per contract, staged verification | Checkboxes + commits |
+| Stage | Question | Deliverable |
+|-------|----------|-------------|
+| **Coverage** | What must be true? | SCENARIOS-<project>.md (pure scenarios, no implementation details) |
+| **Design** | How to implement it fastest without losing correctness? | Worker + driver skills + execution contract |
+| **Execute** | Do it. | Checkboxes + commits |
 
-Re-entry: if returning to a project that already has SCENARIOS and skills, skip to Design (or Execute if a contract already exists).
+Re-entry: if returning to a project that already has SCENARIOS, skip to Design. If skills and contract already exist, skip to Execute.
 
 ---
 
-## Stage 1: Plan
+## Stage 1: Coverage
 
-Goal: produce a reviewed SCENARIOS file and generated skills.
+Goal: a reviewed list of every scenario that must pass. Nothing about implementation — no file targets, no code architecture, no execution strategy.
 
 ### 1.1 Understand the Goal
 
-If the user already stated the goal in their message, skip straight to exploration. Only ask "What is the goal?" when it's genuinely unclear.
+If the user already stated the goal, skip straight to exploration. Only ask when genuinely unclear.
 
-Then explore autonomously — the agent can figure out where the project lives, what the verification surface is, and other context by reading code. Asking the user questions they'd expect you to answer yourself wastes their time and breaks trust.
+Explore autonomously — the agent can figure out where the project lives, what the verification surface is, and other context by reading code.
 
 ### 1.2 Explore
 
-Dispatch exploration subagents to build understanding across two dimensions:
+Dispatch exploration subagents to understand what must be covered:
 
-**Feature terrain** — what must be covered:
-1. Read source code — understand what the system does and what it should support
-2. Read documentation — official specs, grammar definitions, language references
+1. Read source code — what the system does and should support
+2. Read documentation — specs, grammar definitions, language references
 3. Read existing tests — what's already covered and what patterns are used
 4. Run the reference system (if one exists) — capture actual behavior
 5. Enumerate systematically — every feature, variant, edge case, and combination
 
-**Change terrain** — what execution surfaces are involved:
-1. Identify shared callers and dispatch layers — files imported by many modules
-2. Identify shared test surfaces — test helpers, fixtures, shared test files
-3. Identify integration hotspots — registries, routers, config files that multiple sections would touch
+After exploration, present a **single proposal** to the user:
 
-After exploration, present a **single proposal** to the user covering:
-
-1. **What you found** — brief summary of current coverage and key gaps
+1. **What you found** — current coverage and key gaps
 2. **Reference strategy** — how to verify correctness
 3. **Proposed scope** — phase/section outline with approximate scenario counts
-4. **Change-surface overview** — are sections well-isolated or do they share significant files?
 
-This is the Plan stage's confirmation checkpoint. Once the user confirms, proceed.
+This is the Coverage stage's checkpoint. Once confirmed, proceed.
 
 ### 1.3 Chart
 
 Decompose into scenarios following ./scenarios-template.md. Structure: phases (ordered by dependency) > sections (coverage units, 5-25 scenarios each) > scenarios (concrete, binary pass/fail).
 
-For each section, annotate the change surface: Targets (files to modify), Shared (files shared with other sections), Proof (verification command). Annotations can be shallow ("Shared: none") for simple sections — the point is to never skip the question.
+No implementation details in SCENARIOS — no file targets, no shared annotations. Each scenario is a testable assertion about what the system should do, not how to implement it.
 
-### 1.4 Generate Skills
+### 1.4 Review Coverage
 
-Generate a **worker** skill (./worker-template.md) and a **driver** skill (./driver-template.md), customized for the project's test patterns, verification commands, and commit conventions.
+Dispatch a fresh review subagent using ./reviewer-prompt.md. Reviews only coverage: completeness, structure, granularity, reference quality. Does not review implementation approach — that's Stage 2's job.
 
-### 1.5 Review
-
-Dispatch a fresh review subagent using ./reviewer-prompt.md. Covers completeness, structure, change-surface annotations, and proof boundaries.
-
-**Plan stage is complete.** Deliverable: SCENARIOS file + worker + driver skills.
+**Coverage stage is complete.** Deliverable: SCENARIOS-<project>.md.
 
 ---
 
 ## Stage 2: Design
 
-Goal: produce an execution contract for Phase 1 (and later, for each subsequent phase before it runs).
+Goal: given the scenario list, design the fastest correct implementation — code architecture, file structure, skills, parallelization, execution contract.
 
-Dispatch a fresh subagent using ./execution-design-prompt.md. This agent gets a clean context — its only job is execution architecture.
+This stage makes all implementation decisions in one place, so architecture and parallelization are considered together.
 
-It reads the change-surface annotations from SCENARIOS, verifies them against the actual codebase, and classifies the phase into an execution shape:
+### 2.1 Analyze the Implementation Space
 
-- **Sequential** — deep coupling or shared surfaces that can't be prepped away
-- **Prep-gated** — a preparation step (stubs, scaffolding, interface changes) unlocks parallel execution
-- **Parallel** — sections are independent on all three dimensions
-- **Integration-only** — sections run in parallel but need a dedicated integration step afterward
+Read the SCENARIOS file and the codebase (or assess the design space for greenfield projects). Decide:
 
-It outputs a structured execution contract (UNIT/BATCH/PREP/PROOF format) that gets written into the driver skill's `## Execution Contract` section, replacing any previous contract.
+**Code architecture:**
+- For existing codebases: which files will each section modify?
+- For greenfield: how should files be structured? Consider splitting by section to enable parallelism (e.g., `diff_schema.go`, `diff_table.go` instead of one `diff.go`)
 
-For Phase 1, this happens during `/starmap init`. For Phase 2+, the driver dispatches a new design agent before starting each phase — because earlier phases change the codebase, so each design must be based on the latest state.
+**Change surfaces:**
+- Which sections share files? Can the architecture be adjusted to reduce sharing?
+- What are the integration hotspots (shared dispatch, registries, type definitions)?
 
-**Design stage is complete when the driver skill has an execution contract.** The driver will not execute without one.
+**Parallelization:**
+- Classify three kinds of independence: semantic, change-surface, proof
+- Choose execution shape per phase: sequential, prep-gated, parallel, integration-only
+- For prep-gated: define the preparation step (stubs, scaffolding, interface skeleton)
+
+**Proof strategy:**
+- Section-local proof commands
+- Batch integration proof (for parallel batches)
+- Global proof (phase-end full verification)
+
+### 2.2 Generate Skills
+
+Generate a **worker** skill (./worker-template.md) and a **driver** skill (./driver-template.md), customized for:
+- The code architecture decided above
+- File targets per section
+- Test patterns and proof commands
+- Commit conventions
+
+### 2.3 Produce Execution Contract
+
+Dispatch a fresh subagent using ./execution-design-prompt.md for Phase 1. It outputs a structured execution contract (UNIT/BATCH/PREP/PROOF format) written into the driver skill's `## Execution Contract` section.
+
+For Phase 2+, the driver dispatches a new design agent before starting each phase — because earlier phases change the codebase.
+
+### 2.4 Review Design
+
+Present the implementation approach to the user: file structure, parallelization plan, execution contract. This is the Design stage's checkpoint.
+
+**Design stage is complete.** Deliverable: worker skill + driver skill (with execution contract).
 
 ---
 
@@ -117,23 +135,22 @@ Execution follows the staged verification model:
 - **Batch integration proof**: after each parallel batch, driver merges worktree branches and runs integration verification
 - **Global proof**: at phase end, driver runs the full canonical build + test suite
 
-When a phase completes, the driver returns to Stage 2 to design the next phase, then resumes Stage 3.
+When a phase completes, the driver returns to Stage 2 (step 2.3) to design the next phase, then resumes Stage 3.
 
 ---
 
 ## Key Principles
 
-1. **SCENARIOS-<project>.md is the source of truth** — checkboxes ARE the progress
-2. **Expectations are authoritative once reviewed** — never weaken them to match implementation
-3. **One section at a time** — focused unit of work with its own commit
-4. **Progress is monotonic** — once a scenario passes, it never regresses
-5. **Three kinds of independence** — semantic (different features), change-surface (different files), proof (non-interfering verification). All three are needed for safe parallel execution.
-6. **Design before execute** — no phase runs without an execution contract
+1. **Coverage is king** — SCENARIOS-<project>.md defines what "done" means. Implementation details don't belong in it.
+2. **Architecture serves parallelism** — code structure is a design decision, especially for greenfield projects. Choose structures that minimize shared files.
+3. **Three kinds of independence** — semantic (different features), change-surface (different files), proof (non-interfering verification). All three needed for safe parallel execution.
+4. **Design before execute** — no phase runs without an execution contract.
+5. **Progress is monotonic** — once a scenario passes, it never regresses.
 
 ## Anti-Patterns
 
-- **Scenarios too vague**: "handle all numeric types" — break into one scenario per type, because vague scenarios can't be verified as pass/fail
-- **Worker doing too much**: if 10+ scenarios fail, fix up to 10, commit, let driver re-dispatch the rest — small verified commits beat heroic efforts that break things
-- **Skipping exploration**: jumping to scenarios without understanding the territory leads to gaps that are expensive to backfill later
-- **Skipping Design stage**: going straight from Plan to Execute means defaulting to sequential — you lose parallelization opportunities and the change-surface analysis that prevents conflicts
-- **Confusing semantic with change-surface independence**: two sections about different features may still collide on shared callers, dispatch layers, or test fixtures. Topic separation is not execution separation.
+- **Scenarios too vague**: "handle all numeric types" — break into one scenario per type
+- **Implementation details in SCENARIOS**: file targets, code architecture, execution strategy — these belong in Stage 2, not Stage 1
+- **Defaulting to one big file**: for greenfield projects, putting everything in one file guarantees sequential execution. Split by section to enable parallelism.
+- **Skipping Design**: going straight from Coverage to Execute means no architecture analysis, no parallelization, no execution contract
+- **Confusing semantic with change-surface independence**: two sections about different features may still collide on shared files. Topic separation is not execution separation.
