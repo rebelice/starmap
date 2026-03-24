@@ -126,6 +126,8 @@ Present the implementation approach to the user: file structure, parallelization
 
 ## Stage 3: Execute
 
+The entire execution runs in a dedicated git worktree (project-level isolation). This guarantees that multiple starmap projects in the same repo can execute simultaneously without interfering with each other's git state, build cache, or working directory. The driver creates this worktree at the start of `run-all` and merges results back to the main branch when complete.
+
 Use the generated driver skill: `status`, `plan`, `next`, `run X.Y`, `run-all`, `report`.
 
 The driver follows the execution contract exactly. It cannot override batch ordering or parallelism decisions — to change the plan, it must dispatch a new design agent and replace the contract.
@@ -146,6 +148,7 @@ When a phase completes, the driver returns to Stage 2 (step 2.3) to design the n
 3. **Three kinds of independence** — semantic (different features), change-surface (different files), proof (non-interfering verification). All three needed for safe parallel execution.
 4. **Design before execute** — no phase runs without an execution contract.
 5. **Progress is monotonic** — once a scenario passes, it never regresses.
+6. **Project-level isolation** — each starmap project executes in its own worktree. Correctness over convenience.
 
 ## Anti-Patterns
 
