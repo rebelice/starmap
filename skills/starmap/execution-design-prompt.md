@@ -90,6 +90,7 @@ Agent(
     ```
 
     ## Rules
+    - All proof commands and file paths must be relative (e.g., `go test ./pg/catalog/...`), not absolute — execution happens inside a worktree, not the original repo directory
     - Be conservative: if unsure whether two sections conflict, keep them sequential
     - Read actual source files to verify dependencies — don't guess from section names alone
     - A preparation step is only worth it when it unlocks 3+ parallel sections

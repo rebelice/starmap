@@ -82,20 +82,21 @@ Agent(
 ## run-all Command
 
 Runs all remaining pending sections following the execution contract:
-1. Identify all sections with [ ] pending
-2. Read the execution contract (the `## Execution Contract` section in this skill file). If no contract exists, run sections sequentially in section-number order.
-3. **Pre-dispatch consistency check**: before dispatching each batch, verify:
+1. **Create project worktree**: create a dedicated worktree for this starmap project (`git worktree add`). All execution happens inside this worktree — this isolates the project from other concurrent starmap projects in the same repo.
+2. Identify all sections with [ ] pending
+3. Read the execution contract (the `## Execution Contract` section in this skill file). If no contract exists, run sections sequentially in section-number order.
+4. **Pre-dispatch consistency check**: before dispatching each batch, verify:
    - The work units in this batch match the contract exactly
    - Sections marked as SEQUENTIAL within a unit are dispatched to a single worker (not split)
    - No unit is dispatched that the contract says belongs to a later batch
    - Proof commands in the contract match the dispatch prompts being sent to workers
    If any inconsistency is found, stop and replan — do not override the contract.
-4. For each batch per the contract:
+5. For each batch per the contract:
    a. Dispatch subagent(s):
       - **Sequential** (batch size = 1): dispatch single subagent without worktree isolation
       - **Parallel** (batch size > 1): dispatch all subagents simultaneously, each with `isolation: "worktree"`. Worktree is required for parallel execution because workers in the same directory break the build.
    b. **Verify worktree results** (parallel only): for each worker, check that the return includes a commit SHA. If missing (worktree cleaned up), the worker failed to commit — retry immediately.
-   c. **Merge worktree branches** (parallel only): squash-merge each worker's branch to main one at a time (`git merge --squash <branch> && git commit`). This keeps git history linear — no merge commits, no branch spaghetti. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
+   c. **Merge worktree branches** (parallel only): squash-merge each worker's branch into the current project worktree branch one at a time (`git merge --squash <branch> && git commit`). This keeps git history linear. After each merge, run a quick build check. If merge conflicts occur, classify and handle:
       - **Caller update conflict** (two versions of the same call site — e.g., one with error handling, one without): take the more complete version
       - **Additive conflict** (both branches added code at the same insertion point): keep both additions, fix ordering if needed
       - **Structural conflict** (incompatible changes to the same function body): stop and replan — the contract missed a dependency
@@ -103,11 +104,12 @@ Runs all remaining pending sections following the execution contract:
    d. **Batch integration proof** (parallel only): run the batch integration proof command. If it fails, identify which section caused the regression.
    e. **Check out-of-Targets**: if any worker reports files modified outside its declared targets, note this — the execution contract's File Targets may need updating via replan.
    f. Print section summary, then continue
-5. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
-6. Stop on fatal failure (build broken); continue on partial ([~])
-7. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
-8. Resumable: re-running picks up where it left off (checkboxes are durable)
-9. If a phase has 0 pending sections, skip to global proof for that phase, then move to the next phase
+6. **Global proof** at phase end: run the global proof command (canonical build + full test suite). This is mandatory — never skip.
+7. Stop on fatal failure (build broken); continue on partial ([~])
+8. Print cumulative progress summary after every 10 sections, but keep going — do not pause or ask for confirmation
+9. Resumable: re-running picks up where it left off (checkboxes are durable)
+10. If a phase has 0 pending sections, skip to global proof for that phase, then move to the next phase
+11. **Merge project worktree back**: when all phases complete (or when stopping), squash-merge the project worktree branch back to the original branch and clean up the worktree.
 
 ## Proof Checkpoints
 
