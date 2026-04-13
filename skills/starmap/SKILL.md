@@ -135,7 +135,11 @@ The driver follows the execution contract exactly. It cannot override batch orde
 Execution follows the staged verification model:
 - **Section-local proof**: each worker verifies its own tests pass before returning
 - **Batch integration proof**: after each parallel batch, driver merges worktree branches and runs integration verification
+- **Codex batch review** (mandatory): after each batch merge, driver runs an adversarial Codex review on the landed diff via `/codex:review --base <pre-batch-sha>`. Catches cross-section semantic conflicts, missed invariants, and test quality gaps that build/test cannot detect. On `needs-attention`, driver auto-dispatches a fix worker (up to 2 attempts); unresolved findings are deferred to the end of the run rather than stopping execution.
 - **Global proof**: at phase end, driver runs the full canonical build + test suite
+- **Codex phase review** (mandatory): second adversarial pass over the full phase diff after global proof. Same auto-fix + defer policy as batch review.
+
+Deferred Codex findings (from batches or phases that couldn't be auto-resolved) accumulate throughout the run and are presented to the user in a single consolidated report at the end of `run-all`, after all phases and the project-worktree merge-back. No mid-run human intervention is required for `run-all`; the driver runs to completion and surfaces everything that needs a decision at the end.
 
 When a phase completes, the driver returns to Stage 2 (step 2.3) to design the next phase, then resumes Stage 3.
 
@@ -149,6 +153,7 @@ When a phase completes, the driver returns to Stage 2 (step 2.3) to design the n
 4. **Design before execute** — no phase runs without an execution contract.
 5. **Progress is monotonic** — once a scenario passes, it never regresses.
 6. **Project-level isolation** — each starmap project executes in its own worktree. Correctness over convenience.
+7. **Uninterrupted run-all, deferred escalation** — the driver never pauses mid-run for human input. Codex findings that two auto-fix attempts can't resolve are queued and presented once at the end, so overnight runs finish overnight.
 
 ## Anti-Patterns
 
